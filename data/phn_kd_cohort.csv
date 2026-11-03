@@ -1,0 +1,7 @@
+SUBJID,LABEL,AGE_YRS,WT_KG,SEX,FEVDAYS,TMAX_C,CRIT_CONJ,CRIT_RASH,CRIT_ORAL,CRIT_EXT,CRIT_NODE,CRIT_CNT,CRP,ESR,WBC,HGB,PLT,ALB,ALT,URWBC,Z_LAD,Z_RCA,ANEURYSM
+PHN-104,Leo Kim Default — Incomplete KD via Labs,2.1,13.0,M,6,39.4,1,1,0,0,0,2,14.2,78,17.4,9.8,390,2.7,68,24,1.8,1.4,0
+PHN-218,Complete KD — Classic 5/5,3.4,15.5,F,5,40.1,1,1,1,1,1,5,9.8,64,16.2,10.4,420,3.1,52,12,2.1,1.7,0
+PHN-309,Incomplete KD via Positive Echo Z≥2.5,1.2,10.2,M,7,39.1,1,0,1,0,0,2,4.8,48,12.1,10.1,310,3.4,28,4,2.9,2.6,0
+PHN-412,High-Risk Infant ≤6mo with ≤1 Criterion,0.4,6.8,F,7,39.6,0,1,0,0,0,1,8.1,55,18.0,9.2,480,2.8,61,15,2.7,1.9,0
+PHN-507,Suspected KD — Low Inflammatory / KD Unlikely,4.0,16.8,M,5,38.7,0,1,1,0,0,2,1.4,22,9.8,12.1,280,3.8,22,2,0.8,0.6,0
+PHN-615,Incomplete KD via ≥3 Suppl Labs (Echo−),2.8,14.0,F,6,39.2,1,1,1,0,0,3,7.2,52,16.5,9.5,360,2.9,58,18,1.2,1.0,0
