@@ -118,6 +118,48 @@ span[data-testid="stIconMaterial"] {
   line-height: 1.4 !important;
   word-break: break-word !important;
 }
+
+/* Day Attending — pathway / stage dialogs keep dark ink on light surfaces
+   (prevents pale #E2E8F0 night text leaking onto cream modal backgrounds) */
+div[role="dialog"],
+[data-testid="stModal"],
+[data-testid="stDialog"],
+section[data-testid="stDialog"],
+div[data-baseweb="modal"],
+div[data-baseweb="modal"] > div {
+  color: #0F172A !important;
+}
+div[role="dialog"] h1,
+div[role="dialog"] h2,
+div[role="dialog"] h3,
+div[role="dialog"] h4,
+[data-testid="stModal"] h1,
+[data-testid="stModal"] h2,
+[data-testid="stModal"] h3,
+[data-testid="stDialog"] h1,
+[data-testid="stDialog"] h2,
+[data-testid="stDialog"] h3,
+div[role="dialog"] [data-testid="stMarkdownContainer"] strong,
+div[role="dialog"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stModal"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stDialog"] [data-testid="stMarkdownContainer"] p,
+div[role="dialog"] [data-testid="stExpander"] summary,
+div[role="dialog"] [data-testid="stExpander"] summary p,
+[data-testid="stModal"] [data-testid="stExpander"] summary,
+[data-testid="stModal"] [data-testid="stExpander"] summary p {
+  color: #0F172A !important;
+}
+div[role="dialog"] [data-testid="stCaptionContainer"],
+div[role="dialog"] [data-testid="stCaptionContainer"] p,
+div[role="dialog"] [data-testid="stCaptionContainer"] small,
+div[role="dialog"] .stCaption,
+[data-testid="stModal"] [data-testid="stCaptionContainer"],
+[data-testid="stModal"] [data-testid="stCaptionContainer"] p,
+[data-testid="stDialog"] [data-testid="stCaptionContainer"],
+[data-testid="stDialog"] [data-testid="stCaptionContainer"] p {
+  color: #475569 !important;
+  opacity: 1 !important;
+}
 [data-testid="stPopover"] > button,
 [data-testid="stPopoverButton"] {
   display: inline-flex !important;
@@ -9977,7 +10019,8 @@ def inject_night_mode_styles(is_night: bool) -> None:
             font-weight: 600 !important;
         }
 
-        /* Scoped readable body text — NOT a blanket span washout */
+        /* Scoped readable body text — NOT a blanket span washout.
+           Dialog captions/headers are overridden by the modal block below. */
         html.unit4b-night [data-testid="stCaptionContainer"],
         html.unit4b-night [data-testid="stCaptionContainer"] p,
         html.unit4b-night [data-testid="stCaptionContainer"] small,
@@ -9988,6 +10031,93 @@ def inject_night_mode_styles(is_night: bool) -> None:
             color: #E2E8F0 !important;
             font-weight: 500 !important;
             opacity: 1 !important;
+        }
+
+        /* Clinical Pathway / Stage Order dialogs — full dark surface in Night Attending */
+        html.unit4b-night div[role="dialog"],
+        html.unit4b-night [data-testid="stModal"],
+        html.unit4b-night [data-testid="stDialog"],
+        html.unit4b-night section[data-testid="stDialog"],
+        html.unit4b-night div[data-baseweb="modal"],
+        html.unit4b-night div[data-baseweb="modal"] > div,
+        html.unit4b-night div[role="dialog"] > div,
+        html.unit4b-night [data-testid="stModal"] > div {
+            background: #0B1120 !important;
+            background-color: #0B1120 !important;
+            color: #F8FAFC !important;
+            border-color: #334155 !important;
+        }
+        html.unit4b-night div[role="dialog"] [data-testid="stVerticalBlockBorderWrapper"],
+        html.unit4b-night [data-testid="stModal"] [data-testid="stVerticalBlockBorderWrapper"],
+        html.unit4b-night [data-testid="stDialog"] [data-testid="stVerticalBlockBorderWrapper"],
+        html.unit4b-night div[role="dialog"] [data-testid="stExpander"],
+        html.unit4b-night [data-testid="stModal"] [data-testid="stExpander"],
+        html.unit4b-night [data-testid="stDialog"] [data-testid="stExpander"],
+        html.unit4b-night div[role="dialog"] [data-testid="stExpander"] details,
+        html.unit4b-night div[role="dialog"] [data-testid="stExpander"] details > summary,
+        html.unit4b-night [data-testid="stModal"] [data-testid="stExpander"] details > summary {
+            background: #1E293B !important;
+            background-color: #1E293B !important;
+            border: 1px solid #334155 !important;
+            border-color: #334155 !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night div[role="dialog"] h1,
+        html.unit4b-night div[role="dialog"] h2,
+        html.unit4b-night div[role="dialog"] h3,
+        html.unit4b-night div[role="dialog"] h4,
+        html.unit4b-night [data-testid="stModal"] h1,
+        html.unit4b-night [data-testid="stModal"] h2,
+        html.unit4b-night [data-testid="stModal"] h3,
+        html.unit4b-night [data-testid="stDialog"] h1,
+        html.unit4b-night [data-testid="stDialog"] h2,
+        html.unit4b-night [data-testid="stDialog"] h3,
+        html.unit4b-night div[role="dialog"] [data-testid="stMarkdownContainer"] strong,
+        html.unit4b-night div[role="dialog"] [data-testid="stMarkdownContainer"] p,
+        html.unit4b-night [data-testid="stModal"] [data-testid="stMarkdownContainer"] p,
+        html.unit4b-night [data-testid="stDialog"] [data-testid="stMarkdownContainer"] p,
+        html.unit4b-night div[role="dialog"] [data-testid="stExpander"] summary,
+        html.unit4b-night div[role="dialog"] [data-testid="stExpander"] summary p,
+        html.unit4b-night div[role="dialog"] [data-testid="stExpander"] summary span,
+        html.unit4b-night [data-testid="stModal"] [data-testid="stExpander"] summary,
+        html.unit4b-night [data-testid="stModal"] [data-testid="stExpander"] summary p,
+        html.unit4b-night [data-testid="stDialog"] [data-testid="stExpander"] summary p {
+            color: #F8FAFC !important;
+            opacity: 1 !important;
+        }
+        html.unit4b-night div[role="dialog"] [data-testid="stCaptionContainer"],
+        html.unit4b-night div[role="dialog"] [data-testid="stCaptionContainer"] p,
+        html.unit4b-night div[role="dialog"] [data-testid="stCaptionContainer"] small,
+        html.unit4b-night div[role="dialog"] .stCaption,
+        html.unit4b-night [data-testid="stModal"] [data-testid="stCaptionContainer"],
+        html.unit4b-night [data-testid="stModal"] [data-testid="stCaptionContainer"] p,
+        html.unit4b-night [data-testid="stDialog"] [data-testid="stCaptionContainer"],
+        html.unit4b-night [data-testid="stDialog"] [data-testid="stCaptionContainer"] p {
+            color: #CBD5E1 !important;
+            font-weight: 500 !important;
+            opacity: 1 !important;
+        }
+        /* Decision-tree nodes inside pathway dialogs */
+        html.unit4b-night div[role="dialog"] .ftree,
+        html.unit4b-night [data-testid="stModal"] .ftree,
+        html.unit4b-night div[role="dialog"] .fnode,
+        html.unit4b-night div[role="dialog"] .fnode.root,
+        html.unit4b-night div[role="dialog"] .fcmp,
+        html.unit4b-night div[role="dialog"] .protocol-scroll-box {
+            background: #1E293B !important;
+            color: #F8FAFC !important;
+            border-color: #334155 !important;
+        }
+        html.unit4b-night div[role="dialog"] .fnode.root,
+        html.unit4b-night div[role="dialog"] .fnode {
+            background: #0F172A !important;
+            color: #F8FAFC !important;
+            border-color: #475569 !important;
+        }
+        html.unit4b-night div[role="dialog"] .fnode strong,
+        html.unit4b-night div[role="dialog"] .fbranch-label,
+        html.unit4b-night div[role="dialog"] .ftree-title {
+            color: #F8FAFC !important;
         }
         </style>
         """,
