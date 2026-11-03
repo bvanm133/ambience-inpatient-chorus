@@ -119,14 +119,17 @@ span[data-testid="stIconMaterial"] {
   word-break: break-word !important;
 }
 
-/* Day Attending — pathway / stage dialogs keep dark ink on light surfaces
-   (prevents pale #E2E8F0 night text leaking onto cream modal backgrounds) */
+/* Day Attending — pathway / stage dialogs: white surface + dark ink */
+[data-baseweb="modal"] [role="dialog"],
 div[role="dialog"],
 [data-testid="stModal"],
 [data-testid="stDialog"],
 section[data-testid="stDialog"],
+[data-testid="stDialog"] > div,
+div[role="dialog"] > div,
 div[data-baseweb="modal"],
 div[data-baseweb="modal"] > div {
+  background-color: #FFFFFF !important;
   color: #0F172A !important;
 }
 div[role="dialog"] h1,
@@ -159,6 +162,20 @@ div[role="dialog"] .stCaption,
 [data-testid="stDialog"] [data-testid="stCaptionContainer"] p {
   color: #475569 !important;
   opacity: 1 !important;
+}
+/* Day — COG / protocol st.info summary card */
+div[role="dialog"] [data-testid="stAlert"],
+[data-testid="stModal"] [data-testid="stAlert"],
+[data-testid="stDialog"] [data-testid="stAlert"] {
+  background-color: #F1F5F9 !important;
+  border: 1px solid #CBD5E1 !important;
+  color: #0F172A !important;
+}
+div[role="dialog"] [data-testid="stAlert"] [data-testid="stMarkdownContainer"],
+div[role="dialog"] [data-testid="stAlert"] [data-testid="stMarkdownContainer"] p,
+div[role="dialog"] [data-testid="stAlert"] [data-testid="stMarkdownContainer"] strong,
+div[role="dialog"] [data-testid="stAlert"] [data-testid="stAlertContent"] {
+  color: #0F172A !important;
 }
 [data-testid="stPopover"] > button,
 [data-testid="stPopoverButton"] {
@@ -1514,6 +1531,31 @@ div[data-testid="stRadio"] > div[role="radiogroup"] > label,
 .pw-val-red { color: #b91c1c !important; font-weight: 700; }
 .pw-val-amber { color: #b45309 !important; font-weight: 700; }
 .pw-val-green { color: #047857 !important; font-weight: 700; }
+.pw-stage-banner {
+  margin: -0.35rem -0.35rem 0.45rem -0.35rem;
+  padding: 8px 12px;
+  border-radius: 6px 6px 0 0;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #0F172A !important;
+  border-left: 5px solid #047857;
+  background: #ECFDF5;
+}
+.pw-stage-banner.red {
+  border-left-color: #BE123C;
+  background: #FFF1F2;
+  color: #0F172A !important;
+}
+.pw-stage-banner.amber {
+  border-left-color: #D97706;
+  background: #FFFBEB;
+  color: #0F172A !important;
+}
+.pw-stage-banner.green {
+  border-left-color: #047857;
+  background: #ECFDF5;
+  color: #0F172A !important;
+}
 
 /* Protocol comparison / table headers — light readable bar */
 .protocol-scroll-box {
@@ -6893,23 +6935,15 @@ def _pathway_stage_card(
     active: bool = False,
     tone: str = "green",
 ) -> None:
-    border = ACUITY_RED if active else (
-        ACUITY_AMBER if tone == "amber" else (
-            ACUITY_RED if tone == "red" else ACUITY_GREEN
-        )
-    )
-    soft_bg = (
-        "#FFF1F2"
+    tone_cls = (
+        "red"
         if active or tone == "red"
-        else ("#FFFBEB" if tone == "amber" else "#ECFDF5")
+        else ("amber" if tone == "amber" else "green")
     )
     with st.container(border=True):
         st.html(
             f"""
-            <div style="border-left:5px solid {border}; background:{soft_bg};
-                        margin:-0.35rem -0.35rem 0.45rem -0.35rem;
-                        padding:8px 12px; border-radius:6px 6px 0 0;
-                        font-weight:700; font-size:0.9rem; color:#0f172a;">
+            <div class="pw-stage-banner {tone_cls}">
               {html.escape(title)} · {html.escape(status)}
             </div>
             """
@@ -9604,14 +9638,10 @@ def inject_night_mode_styles(is_night: bool) -> None:
             color: #94A3B8 !important;
         }
 
-        /* Class-based light cards that lack style= attributes */
+        /* Class-based light cards — NEVER force white text onto undecided tree nodes here.
+           Decision-tree / dialog nodes are handled in the modal block below. */
         html.unit4b-night .synth-running,
-        html.unit4b-night .synth-one-liner,
-        html.unit4b-night .ftree,
-        html.unit4b-night .fnode,
-        html.unit4b-night .fcmp,
-        html.unit4b-night .fcmp-row > div,
-        html.unit4b-night .protocol-scroll-box {
+        html.unit4b-night .synth-one-liner {
             color: #F8FAFC !important;
         }
         html.unit4b-night .synth-running {
@@ -10033,19 +10063,21 @@ def inject_night_mode_styles(is_night: bool) -> None:
             opacity: 1 !important;
         }
 
-        /* Clinical Pathway / Stage Order dialogs — full dark surface in Night Attending */
+        /* Clinical Pathway / Stage Order dialogs — dark modal surface (Night only) */
+        html.unit4b-night [data-baseweb="modal"] [role="dialog"],
         html.unit4b-night div[role="dialog"],
         html.unit4b-night [data-testid="stModal"],
         html.unit4b-night [data-testid="stDialog"],
         html.unit4b-night section[data-testid="stDialog"],
+        html.unit4b-night [data-testid="stDialog"] > div,
+        html.unit4b-night div[role="dialog"] > div,
         html.unit4b-night div[data-baseweb="modal"],
         html.unit4b-night div[data-baseweb="modal"] > div,
-        html.unit4b-night div[role="dialog"] > div,
         html.unit4b-night [data-testid="stModal"] > div {
-            background: #0B1120 !important;
-            background-color: #0B1120 !important;
+            background-color: #0F172A !important;
+            background: #0F172A !important;
             color: #F8FAFC !important;
-            border-color: #334155 !important;
+            border: 1px solid #334155 !important;
         }
         html.unit4b-night div[role="dialog"] [data-testid="stVerticalBlockBorderWrapper"],
         html.unit4b-night [data-testid="stModal"] [data-testid="stVerticalBlockBorderWrapper"],
@@ -10059,7 +10091,6 @@ def inject_night_mode_styles(is_night: bool) -> None:
             background: #1E293B !important;
             background-color: #1E293B !important;
             border: 1px solid #334155 !important;
-            border-color: #334155 !important;
             color: #F8FAFC !important;
         }
         html.unit4b-night div[role="dialog"] h1,
@@ -10097,27 +10128,150 @@ def inject_night_mode_styles(is_night: bool) -> None:
             font-weight: 500 !important;
             opacity: 1 !important;
         }
-        /* Decision-tree nodes inside pathway dialogs */
-        html.unit4b-night div[role="dialog"] .ftree,
-        html.unit4b-night [data-testid="stModal"] .ftree,
-        html.unit4b-night div[role="dialog"] .fnode,
-        html.unit4b-night div[role="dialog"] .fnode.root,
-        html.unit4b-night div[role="dialog"] .fcmp,
-        html.unit4b-night div[role="dialog"] .protocol-scroll-box {
+
+        /* Night — COG / protocol st.info summary card */
+        html.unit4b-night div[role="dialog"] [data-testid="stAlert"],
+        html.unit4b-night [data-testid="stModal"] [data-testid="stAlert"],
+        html.unit4b-night [data-testid="stDialog"] [data-testid="stAlert"],
+        html.unit4b-night [data-baseweb="modal"] [data-testid="stAlert"] {
+            background-color: #1E293B !important;
+            background: #1E293B !important;
+            border: 1px solid #334155 !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night div[role="dialog"] [data-testid="stAlert"] [data-testid="stMarkdownContainer"],
+        html.unit4b-night div[role="dialog"] [data-testid="stAlert"] [data-testid="stMarkdownContainer"] p,
+        html.unit4b-night div[role="dialog"] [data-testid="stAlert"] [data-testid="stMarkdownContainer"] strong,
+        html.unit4b-night div[role="dialog"] [data-testid="stAlert"] [data-testid="stAlertContent"],
+        html.unit4b-night div[role="dialog"] [data-testid="stAlert"] [data-testid="stAlertContent"] p {
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night div[role="dialog"] [data-testid="stAlert"] [data-testid="stAlertTitle"],
+        html.unit4b-night div[role="dialog"] [data-testid="stAlert"] [data-testid="stAlertTitle"] p,
+        html.unit4b-night div[role="dialog"] [data-testid="stAlert"] [data-testid="stMarkdownContainer"] > p:first-child strong {
+            color: #38BDF8 !important;
+            font-weight: 700 !important;
+        }
+
+        /* ── Decision trees (all patients) — Night Attending ── */
+        html.unit4b-night .ftree {
+            background: transparent !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .ftree-title {
+            color: #CBD5E1 !important;
+            font-weight: 700 !important;
+        }
+        /* Root / default boxes: never leave white cards with white text */
+        html.unit4b-night .fnode.root,
+        html.unit4b-night .fnode:not(.branch-taken):not(.branch-watermarked),
+        html.unit4b-night .ftree > .fnode {
+            background: #1E293B !important;
+            background-color: #1E293B !important;
+            border: 1.5px solid #334155 !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .fnode.root strong,
+        html.unit4b-night .fnode.root span,
+        html.unit4b-night .fnode.root div {
+            color: #F8FAFC !important;
+        }
+        /* Watermarked / unselected path — dark slate, muted readable text */
+        html.unit4b-night .fnode.branch-watermarked,
+        html.unit4b-night .fbranch.branch-watermarked .fnode {
+            background: #0F172A !important;
+            background-image: none !important;
+            border: 1px dashed #475569 !important;
+            color: #94A3B8 !important;
+            opacity: 0.85 !important;
+            filter: none !important;
+        }
+        /* Active/taken leaf cards KEEP light semantic surfaces — lock dark ink
+           so no night rule can bleach them white-on-white */
+        html.unit4b-night .fnode.branch-taken,
+        html.unit4b-night .fnode.branch-taken.red,
+        html.unit4b-night .fnode.branch-taken.amber,
+        html.unit4b-night .fnode.branch-taken.watch,
+        html.unit4b-night .fnode.branch-taken.green,
+        html.unit4b-night .fbranch.branch-taken .fnode {
+            color: #0F172A !important;
+        }
+        html.unit4b-night .fnode.branch-taken *,
+        html.unit4b-night .fnode.branch-taken span,
+        html.unit4b-night .fnode.branch-taken div,
+        html.unit4b-night .fnode.branch-taken strong,
+        html.unit4b-night .fnode.branch-taken.red *,
+        html.unit4b-night .fnode.branch-taken.amber *,
+        html.unit4b-night .fnode.branch-taken.watch *,
+        html.unit4b-night .fnode.branch-taken.green *,
+        html.unit4b-night .fnode.branch-taken .ford-cur,
+        html.unit4b-night .fnode.branch-taken .ford-chg,
+        html.unit4b-night .fnode.branch-taken .ford-cur strong,
+        html.unit4b-night .fnode.branch-taken .ford-chg strong {
+            color: #0F172A !important;
+        }
+        html.unit4b-night .fnode.branch-taken.red,
+        html.unit4b-night .fbranch.branch-taken.red .fnode {
+            background: #FFFFFF !important;
+            background-color: #FFFFFF !important;
+            border: 2px solid #BE123C !important;
+            color: #0F172A !important;
+        }
+        html.unit4b-night .fnode.branch-taken.amber,
+        html.unit4b-night .fnode.branch-taken.watch,
+        html.unit4b-night .fbranch.branch-taken.amber .fnode,
+        html.unit4b-night .fbranch.branch-taken.watch .fnode {
+            background: #FFFFFF !important;
+            background-color: #FFFFFF !important;
+            border: 2px solid #D97706 !important;
+            color: #0F172A !important;
+        }
+        html.unit4b-night .fnode.branch-taken.green,
+        html.unit4b-night .fbranch.branch-taken.green .fnode {
+            background: #FFFFFF !important;
+            background-color: #FFFFFF !important;
+            border: 2px solid #047857 !important;
+            color: #0F172A !important;
+        }
+        /* Branch condition labels — bright on dark tree canvas */
+        html.unit4b-night .fbranch.branch-taken.red .fbranch-label {
+            color: #FCA5A5 !important;
+            font-weight: 700 !important;
+            opacity: 1 !important;
+            filter: none !important;
+        }
+        html.unit4b-night .fbranch.branch-taken.amber .fbranch-label,
+        html.unit4b-night .fbranch.branch-taken.watch .fbranch-label {
+            color: #FCD34D !important;
+            font-weight: 700 !important;
+            opacity: 1 !important;
+            filter: none !important;
+        }
+        html.unit4b-night .fbranch.branch-taken.green .fbranch-label {
+            color: #6EE7B7 !important;
+            font-weight: 700 !important;
+            opacity: 1 !important;
+            filter: none !important;
+        }
+        html.unit4b-night .fbranch.branch-watermarked .fbranch-label {
+            color: #94A3B8 !important;
+        }
+        /* Pathway stage banners — dark slate in Night, never white-on-light */
+        html.unit4b-night .pw-stage-banner,
+        html.unit4b-night .pw-stage-banner.red,
+        html.unit4b-night .pw-stage-banner.amber,
+        html.unit4b-night .pw-stage-banner.green {
             background: #1E293B !important;
             color: #F8FAFC !important;
-            border-color: #334155 !important;
         }
-        html.unit4b-night div[role="dialog"] .fnode.root,
-        html.unit4b-night div[role="dialog"] .fnode {
-            background: #0F172A !important;
-            color: #F8FAFC !important;
-            border-color: #475569 !important;
+        html.unit4b-night .pw-stage-banner.red {
+            border-left-color: #F43F5E !important;
         }
-        html.unit4b-night div[role="dialog"] .fnode strong,
-        html.unit4b-night div[role="dialog"] .fbranch-label,
-        html.unit4b-night div[role="dialog"] .ftree-title {
-            color: #F8FAFC !important;
+        html.unit4b-night .pw-stage-banner.amber {
+            border-left-color: #F59E0B !important;
+        }
+        html.unit4b-night .pw-stage-banner.green {
+            border-left-color: #10B981 !important;
         }
         </style>
         """,
