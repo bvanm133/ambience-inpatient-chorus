@@ -1993,6 +1993,38 @@ div[class*="st-key-patient_hero_"] > div[data-testid="stVerticalBlock"] {
   border: 1px solid #E4E4E0;
   border-radius: 10px;
 }
+/* Point-of-care AutoCDI capture card (stage / pathway popovers) */
+.autocdi-card {
+  background: #F0F9FF;
+  border: 1.5px solid #0284C7;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #0F172A;
+  line-height: 1.45;
+}
+.autocdi-kicker {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #0369A1;
+  margin-bottom: 6px;
+}
+.autocdi-title {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #0F172A;
+  margin-bottom: 4px;
+}
+.autocdi-note {
+  font-size: 0.82rem;
+  color: #334155;
+}
+.autocdi-footer {
+  font-size: 0.72rem;
+  color: #475569;
+  margin-top: 8px;
+}
 .synth-running li {
   font-family: var(--amb-mono) !important;
   font-size: 0.78rem;
@@ -7042,19 +7074,11 @@ def _autocdi_card(cdi_label: str, cdi_note: str) -> None:
     st.markdown("**Part 2 — Point-of-Care AutoCDI Capture**")
     st.html(
         f"""
-        <div style="background:#f8fafc; border:1.5px solid #0369a1; border-radius:10px;
-                    padding:12px 14px; color:#0f172a; line-height:1.45;">
-          <div style="font-size:0.72rem; font-weight:800; letter-spacing:0.04em;
-                      text-transform:uppercase; color:#0369a1; margin-bottom:6px;">
-            AutoCDI · CC / MCC capture
-          </div>
-          <div style="font-weight:700; font-size:0.92rem; color:#0f172a; margin-bottom:4px;">
-            {html.escape(cdi_label)}
-          </div>
-          <div style="font-size:0.82rem; color:#334155;">
-            {html.escape(cdi_note)}
-          </div>
-          <div style="font-size:0.72rem; color:#475569; margin-top:8px;">
+        <div class="autocdi-card">
+          <div class="autocdi-kicker">AutoCDI · CC / MCC capture</div>
+          <div class="autocdi-title">{html.escape(cdi_label)}</div>
+          <div class="autocdi-note">{html.escape(cdi_note)}</div>
+          <div class="autocdi-footer">
             Optional — include in progress note after clinical attestation.
           </div>
         </div>
@@ -9515,19 +9539,103 @@ def inject_night_mode_styles(is_night: bool) -> None:
             border-left-color: #F59E0B !important;
         }
 
-        /* Catch remaining hardcoded light surfaces + dark ink in custom HTML */
+        /* AutoCDI capture card — dark navy + cyan accent */
+        html.unit4b-night .autocdi-card,
+        html.unit4b-night [data-testid="stPopoverBody"] .autocdi-card,
+        html.unit4b-night div[data-baseweb="popover"] .autocdi-card {
+            background: #0F172A !important;
+            background-color: #0F172A !important;
+            border: 1.5px solid #38BDF8 !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .autocdi-kicker {
+            color: #38BDF8 !important;
+        }
+        html.unit4b-night .autocdi-title {
+            color: #F8FAFC !important;
+            font-weight: 700 !important;
+        }
+        html.unit4b-night .autocdi-note {
+            color: #E2E8F0 !important;
+        }
+        html.unit4b-night .autocdi-footer {
+            color: #94A3B8 !important;
+        }
+
+        /* Class-based light cards that lack style= attributes */
+        html.unit4b-night .synth-running,
+        html.unit4b-night .synth-one-liner,
+        html.unit4b-night .ftree,
+        html.unit4b-night .fnode,
+        html.unit4b-night .fcmp,
+        html.unit4b-night .fcmp-row > div,
+        html.unit4b-night .protocol-scroll-box {
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .synth-running {
+            background: #1E293B !important;
+            border-color: #334155 !important;
+        }
+        html.unit4b-night .synth-running li {
+            color: #E2E8F0 !important;
+        }
+        html.unit4b-night .synth-escalate {
+            background: #2A1215 !important;
+            border-color: #7F1D1D !important;
+            color: #FDA4AF !important;
+        }
+        html.unit4b-night .synth-escalate.green {
+            background: #064E3B !important;
+            border-color: #10B981 !important;
+            color: #A7F3D0 !important;
+        }
+
+        /* Catch remaining hardcoded light surfaces + dark ink in custom HTML
+           (case-insensitive hex variants — #f8fafc was previously missed) */
         html.unit4b-night [style*="background:#FFFFFF"],
         html.unit4b-night [style*="background: #FFFFFF"],
         html.unit4b-night [style*="background:#FFF"],
         html.unit4b-night [style*="background: #FFF"],
         html.unit4b-night [style*="background:#ffffff"],
         html.unit4b-night [style*="background: #ffffff"],
+        html.unit4b-night [style*="background:#fff"],
+        html.unit4b-night [style*="background: #fff"],
         html.unit4b-night [style*="background:#F8FAFC"],
         html.unit4b-night [style*="background: #F8FAFC"],
+        html.unit4b-night [style*="background:#f8fafc"],
+        html.unit4b-night [style*="background: #f8fafc"],
         html.unit4b-night [style*="background:#F1F5F9"],
         html.unit4b-night [style*="background: #F1F5F9"],
+        html.unit4b-night [style*="background:#f1f5f9"],
+        html.unit4b-night [style*="background: #f1f5f9"],
         html.unit4b-night [style*="background:#F1F0EC"],
-        html.unit4b-night [style*="background: #F1F0EC"] {
+        html.unit4b-night [style*="background: #F1F0EC"],
+        html.unit4b-night [style*="background:#f1f0ec"],
+        html.unit4b-night [style*="background: #f1f0ec"],
+        html.unit4b-night [style*="background:#F0F9FF"],
+        html.unit4b-night [style*="background: #F0F9FF"],
+        html.unit4b-night [style*="background:#f0f9ff"],
+        html.unit4b-night [style*="background: #f0f9ff"],
+        html.unit4b-night [style*="background:#EFF6FF"],
+        html.unit4b-night [style*="background: #EFF6FF"],
+        html.unit4b-night [style*="background:#eff6ff"],
+        html.unit4b-night [style*="background: #eff6ff"],
+        html.unit4b-night [style*="background:#FEF2F2"],
+        html.unit4b-night [style*="background: #FEF2F2"],
+        html.unit4b-night [style*="background:#fef2f2"],
+        html.unit4b-night [style*="background: #fef2f2"],
+        html.unit4b-night [style*="background:#FFFBEB"],
+        html.unit4b-night [style*="background: #FFFBEB"],
+        html.unit4b-night [style*="background:#fffbeb"],
+        html.unit4b-night [style*="background: #fffbeb"],
+        html.unit4b-night [style*="background:#F0FDF4"],
+        html.unit4b-night [style*="background: #F0FDF4"],
+        html.unit4b-night [style*="background:#f0fdf4"],
+        html.unit4b-night [style*="background: #f0fdf4"],
+        html.unit4b-night [style*="background:#ECFDF5"],
+        html.unit4b-night [style*="background: #ECFDF5"],
+        html.unit4b-night [style*="background:#ecfdf5"],
+        html.unit4b-night [style*="background: #ecfdf5"] {
             background: #1E293B !important;
             background-color: #1E293B !important;
             color: #F8FAFC !important;
@@ -9536,8 +9644,31 @@ def inject_night_mode_styles(is_night: bool) -> None:
         html.unit4b-night [style*="color:#0F172A"],
         html.unit4b-night [style*="color: #0F172A"],
         html.unit4b-night [style*="color:#0f172a"],
-        html.unit4b-night [style*="color: #0f172a"] {
+        html.unit4b-night [style*="color: #0f172a"],
+        html.unit4b-night [style*="color:#334155"],
+        html.unit4b-night [style*="color: #334155"],
+        html.unit4b-night [style*="color:#475569"],
+        html.unit4b-night [style*="color: #475569"] {
             color: #F8FAFC !important;
+        }
+        /* Epic composer status chips — dark semantic surfaces (after light catch-all) */
+        html.unit4b-night [style*="background:#ECFDF5"],
+        html.unit4b-night [style*="background: #ECFDF5"],
+        html.unit4b-night [style*="background:#ecfdf5"],
+        html.unit4b-night [style*="background: #ecfdf5"] {
+            background: #064E3B !important;
+            background-color: #064E3B !important;
+            color: #A7F3D0 !important;
+            border-color: #10B981 !important;
+        }
+        html.unit4b-night [style*="background:#FFFBEB"],
+        html.unit4b-night [style*="background: #FFFBEB"],
+        html.unit4b-night [style*="background:#fffbeb"],
+        html.unit4b-night [style*="background: #fffbeb"] {
+            background: #422006 !important;
+            background-color: #422006 !important;
+            color: #FDE68A !important;
+            border-color: #F59E0B !important;
         }
         /* Re-assert light status pills after white-surface catch-all */
         html.unit4b-night .lab-pill.red {
