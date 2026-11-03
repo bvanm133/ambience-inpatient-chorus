@@ -762,6 +762,13 @@ div[data-testid="stPopover"] button p {
   overflow-x: auto;
   margin: 4px 0 12px;
 }
+.mic-table-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin-bottom: 8px;
+  line-height: 1.35;
+}
 .mic-table {
   width: 100%;
   border-collapse: separate;
@@ -5510,8 +5517,7 @@ def maya_mic_table_html(*, switched: bool) -> str:
         )
     return (
         '<div class="mic-table-wrap">'
-        '<div style="font-size:0.82rem;font-weight:700;color:#0F172A;'
-        'margin-bottom:8px;">🦠 Final Urine Culture: &gt;100,000 CFU/mL '
+        '<div class="mic-table-title">🦠 Final Urine Culture: &gt;100,000 CFU/mL '
         "Escherichia coli (Catheterized Specimen · Resulted 22:10)</div>"
         '<table class="mic-table"><thead><tr>'
         "<th>Antibiotic</th><th>Sensitivity</th><th>MIC (µg/mL)</th>"
@@ -6408,18 +6414,57 @@ def _build_fever_series(p: dict, stamps: list[datetime], window: str) -> pd.Data
     return pd.DataFrame(rows)
 
 
+def _night_mode_active() -> bool:
+    """True when command-bar Shift view is Night Attending."""
+    return "Night" in str(st.session_state.get("shift_view", DAY))
+
+
+def _chart_palette(*, night: bool | None = None) -> dict[str, str]:
+    """Shared Altair day/night colors for vitals charts."""
+    if night is None:
+        night = _night_mode_active()
+    if night:
+        return {
+            "bg": "#0F172A",
+            "fg": "#F8FAFC",
+            "muted": "#CBD5E1",
+            "grid": "#334155",
+            "line": "#94A3B8",
+            "title": "#F8FAFC",
+        }
+    return {
+        "bg": "#FFFFFF",
+        "fg": "#0f172a",
+        "muted": "#0f172a",
+        "grid": "#E2E8F0",
+        "line": "#334155",
+        "title": "#0f172a",
+    }
+
+
 def _bp_percentile_chart(p: dict, bp_df: pd.DataFrame) -> alt.Chart:
     """Dual SBP + DBP 5th–95th %ile bands with overlaid patient trends."""
+    theme = _chart_palette()
     bands = VITALS_BP_BANDS.get(p["id"], VITALS_BP_BANDS["emma"])
     sbp_lo, sbp_hi = bands["sbp"]
     dbp_lo, dbp_hi = bands["dbp"]
     t0, t1 = bp_df["time"].min(), bp_df["time"].max()
     y_scale = alt.Scale(domain=[35, 140])
-    y_axis = alt.Axis(labelColor="#0f172a", titleColor="#0f172a", title="Blood Pressure (mmHg)")
+    y_axis = alt.Axis(
+        labelColor=theme["muted"],
+        titleColor=theme["muted"],
+        gridColor=theme["grid"],
+        title="Blood Pressure (mmHg)",
+    )
     x_enc = alt.X(
         "time:T",
         title="Time",
-        axis=alt.Axis(labelColor="#0f172a", titleColor="#0f172a", grid=True),
+        axis=alt.Axis(
+            labelColor=theme["muted"],
+            titleColor=theme["muted"],
+            grid=True,
+            gridColor=theme["grid"],
+        ),
     )
 
     # Explicit horizontal percentile bands (rect across full X window)
@@ -6528,17 +6573,25 @@ def _bp_percentile_chart(p: dict, bp_df: pd.DataFrame) -> alt.Chart:
             height=300,
             title=alt.TitleParams(
                 f"BP trend · {bands['label']}",
-                color="#0f172a",
+                color=theme["title"],
                 fontSize=13,
             ),
         )
-        .configure_axis(labelColor="#0f172a", titleColor="#0f172a")
-        .configure_view(strokeWidth=0)
+        .configure(background=theme["bg"])
+        .configure_axis(
+            labelColor=theme["muted"],
+            titleColor=theme["muted"],
+            gridColor=theme["grid"],
+            domainColor=theme["grid"],
+            tickColor=theme["grid"],
+        )
+        .configure_view(strokeWidth=0, fill=theme["bg"])
         .configure_legend(disable=True)
     )
 
 
 def _fever_curve_chart(fever_df: pd.DataFrame) -> alt.Chart:
+    theme = _chart_palette()
     cutoff = (
         alt.Chart(pd.DataFrame({"y": [100.4], "label": ["Fever Cutoff (100.4°F)"]}))
         .mark_rule(strokeDash=[6, 4], color="#dc2626", strokeWidth=2)
@@ -6551,18 +6604,26 @@ def _fever_curve_chart(fever_df: pd.DataFrame) -> alt.Chart:
     )
     line = (
         alt.Chart(fever_df)
-        .mark_line(color="#334155", strokeWidth=2)
+        .mark_line(color=theme["line"], strokeWidth=2)
         .encode(
             x=alt.X(
                 "time:T",
                 title="Time",
-                axis=alt.Axis(labelColor="#0f172a", titleColor="#0f172a"),
+                axis=alt.Axis(
+                    labelColor=theme["muted"],
+                    titleColor=theme["muted"],
+                    gridColor=theme["grid"],
+                ),
             ),
             y=alt.Y(
                 "temp_f:Q",
                 title="Temperature (°F)",
                 scale=alt.Scale(domain=[96.5, 104.5]),
-                axis=alt.Axis(labelColor="#0f172a", titleColor="#0f172a"),
+                axis=alt.Axis(
+                    labelColor=theme["muted"],
+                    titleColor=theme["muted"],
+                    gridColor=theme["grid"],
+                ),
             ),
             tooltip=[
                 alt.Tooltip("time:T", title="Time"),
@@ -6571,6 +6632,7 @@ def _fever_curve_chart(fever_df: pd.DataFrame) -> alt.Chart:
             ],
         )
     )
+    afebrile_pt = "#34D399" if _night_mode_active() else "#047857"
     pts = (
         alt.Chart(fever_df)
         .mark_circle(size=60)
@@ -6580,7 +6642,7 @@ def _fever_curve_chart(fever_df: pd.DataFrame) -> alt.Chart:
             color=alt.condition(
                 alt.datum.febrile,
                 alt.value("#dc2626"),
-                alt.value("#047857"),
+                alt.value(afebrile_pt),
             ),
             tooltip=[
                 alt.Tooltip("time:T", title="Time"),
@@ -6595,12 +6657,19 @@ def _fever_curve_chart(fever_df: pd.DataFrame) -> alt.Chart:
             height=280,
             title=alt.TitleParams(
                 "Fever curve (°F) with 100.4°F (38.0°C) cutoff",
-                color="#0f172a",
+                color=theme["title"],
                 fontSize=13,
             ),
         )
-        .configure_axis(labelColor="#0f172a", titleColor="#0f172a")
-        .configure_view(strokeWidth=0)
+        .configure(background=theme["bg"])
+        .configure_axis(
+            labelColor=theme["muted"],
+            titleColor=theme["muted"],
+            gridColor=theme["grid"],
+            domainColor=theme["grid"],
+            tickColor=theme["grid"],
+        )
+        .configure_view(strokeWidth=0, fill=theme["bg"])
     )
 
 
@@ -9153,10 +9222,99 @@ def inject_night_mode_styles(is_night: bool) -> None:
         html.unit4b-night .lab-detail-cutoff,
         html.unit4b-night .supp-lab-cut,
         html.unit4b-night .supp-lab-name,
-        html.unit4b-night .mic-footnote,
-        html.unit4b-night .mic-table th {
+        html.unit4b-night .mic-footnote {
             color: #E2E8F0 !important;
             font-weight: 500 !important;
+        }
+
+        /* Antibiogram / MIC susceptibility tables */
+        html.unit4b-night .mic-table-title,
+        html.unit4b-night .mic-table-wrap .mic-table-title,
+        html.unit4b-night [data-testid="stPopoverBody"] .mic-table-title,
+        html.unit4b-night div[data-baseweb="popover"] .mic-table-title {
+            color: #F8FAFC !important;
+            font-weight: 700 !important;
+        }
+        html.unit4b-night .mic-table {
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .mic-table th,
+        html.unit4b-night [data-testid="stPopoverBody"] .mic-table th,
+        html.unit4b-night div[data-baseweb="popover"] .mic-table th {
+            background: #1E293B !important;
+            background-color: #1E293B !important;
+            border: 1px solid #334155 !important;
+            color: #CBD5E1 !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+        }
+        html.unit4b-night .mic-table td,
+        html.unit4b-night [data-testid="stPopoverBody"] .mic-table td,
+        html.unit4b-night div[data-baseweb="popover"] .mic-table td {
+            background: #0F172A !important;
+            background-color: #0F172A !important;
+            border-top: 1px solid #334155 !important;
+            border-bottom: 1px solid #334155 !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .mic-table td:first-child {
+            border-left: 1px solid #334155 !important;
+        }
+        html.unit4b-night .mic-table td:last-child {
+            border-right: 1px solid #334155 !important;
+        }
+        html.unit4b-night .mic-table .mono {
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .mic-table tr.row-active td,
+        html.unit4b-night .mic-table tr.row-chosen td {
+            background: #064E3B !important;
+            background-color: #064E3B !important;
+            border-color: #10B981 !important;
+            border-style: solid !important;
+            border-top-width: 2px !important;
+            border-bottom-width: 2px !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .mic-table tr.row-active td:first-child,
+        html.unit4b-night .mic-table tr.row-chosen td:first-child {
+            border-left: 2px solid #10B981 !important;
+        }
+        html.unit4b-night .mic-table tr.row-active td:last-child,
+        html.unit4b-night .mic-table tr.row-chosen td:last-child {
+            border-right: 2px solid #10B981 !important;
+        }
+        html.unit4b-night .mic-table tr.row-target td {
+            background: #022C22 !important;
+            background-color: #022C22 !important;
+            border-color: #10B981 !important;
+            border-style: dashed !important;
+            border-top-width: 2px !important;
+            border-bottom-width: 2px !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .mic-table tr.row-target td:first-child {
+            border-left: 2px dashed #10B981 !important;
+        }
+        html.unit4b-night .mic-table tr.row-target td:last-child {
+            border-right: 2px dashed #10B981 !important;
+        }
+        html.unit4b-night .mic-table tr.row-warn td {
+            background: #422006 !important;
+            background-color: #422006 !important;
+            border-color: #F59E0B !important;
+            color: #FDE68A !important;
+        }
+        html.unit4b-night .mic-status-badge {
+            background: #D1FAE5 !important;
+            border: 1px solid #10B981 !important;
+            color: #065F46 !important;
+            font-weight: 700 !important;
+        }
+        html.unit4b-night .mic-status-badge.muted {
+            background: #065F46 !important;
+            border-color: #10B981 !important;
+            color: #A7F3D0 !important;
         }
         html.unit4b-night .lab-detail-row {
             border-bottom-color: #334155 !important;
@@ -9302,6 +9460,22 @@ def inject_night_mode_styles(is_night: bool) -> None:
             border-color: #334155 !important;
             color: #F8FAFC !important;
         }
+        /* Protocol / comparison tables */
+        html.unit4b-night .protocol-scroll-box {
+            background: #0F172A !important;
+            border-color: #334155 !important;
+        }
+        html.unit4b-night .protocol-scroll-box thead th {
+            background-color: #1E293B !important;
+            color: #CBD5E1 !important;
+            border-bottom-color: #334155 !important;
+            font-weight: 700 !important;
+        }
+        html.unit4b-night .protocol-scroll-box tbody td {
+            background: #0F172A !important;
+            color: #F8FAFC !important;
+            border-bottom-color: #334155 !important;
+        }
         html.unit4b-night .protocol-scroll-box tbody tr.row-red td {
             background: #2A1215 !important;
             color: #F8FAFC !important;
@@ -9310,12 +9484,251 @@ def inject_night_mode_styles(is_night: bool) -> None:
             background: #1E293B !important;
             color: #F8FAFC !important;
         }
+        html.unit4b-night .protocol-scroll-box tbody tr.row-green td {
+            background: #064E3B !important;
+            color: #F8FAFC !important;
+        }
 
-        /* 6. Day / Night toggle track */
+        /* EHR evidence cards in checklist / popovers */
+        html.unit4b-night .ehr-ev-card {
+            background: #1E293B !important;
+            border-color: #334155 !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .ehr-ev-header,
+        html.unit4b-night .ehr-ev-body,
+        html.unit4b-night .ehr-ev-rxn {
+            background: #0F172A !important;
+            border-color: #334155 !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .ehr-ev-section,
+        html.unit4b-night .ehr-ev-subhead {
+            color: #93C5FD !important;
+        }
+        html.unit4b-night .ehr-ev-rxn-title,
+        html.unit4b-night .ehr-ev-why {
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .ehr-ev-why {
+            background: #422006 !important;
+            border-left-color: #F59E0B !important;
+        }
+
+        /* Catch remaining hardcoded light surfaces + dark ink in custom HTML */
+        html.unit4b-night [style*="background:#FFFFFF"],
+        html.unit4b-night [style*="background: #FFFFFF"],
+        html.unit4b-night [style*="background:#FFF"],
+        html.unit4b-night [style*="background: #FFF"],
+        html.unit4b-night [style*="background:#ffffff"],
+        html.unit4b-night [style*="background: #ffffff"],
+        html.unit4b-night [style*="background:#F8FAFC"],
+        html.unit4b-night [style*="background: #F8FAFC"],
+        html.unit4b-night [style*="background:#F1F5F9"],
+        html.unit4b-night [style*="background: #F1F5F9"],
+        html.unit4b-night [style*="background:#F1F0EC"],
+        html.unit4b-night [style*="background: #F1F0EC"] {
+            background: #1E293B !important;
+            background-color: #1E293B !important;
+            color: #F8FAFC !important;
+            border-color: #334155 !important;
+        }
+        html.unit4b-night [style*="color:#0F172A"],
+        html.unit4b-night [style*="color: #0F172A"],
+        html.unit4b-night [style*="color:#0f172a"],
+        html.unit4b-night [style*="color: #0f172a"] {
+            color: #F8FAFC !important;
+        }
+        /* Re-assert light status pills after white-surface catch-all */
+        html.unit4b-night .lab-pill.red {
+            color: #991B1B !important;
+            background: #FFF1F2 !important;
+            border-color: #FECDD3 !important;
+        }
+        html.unit4b-night .lab-pill.amber {
+            color: #92400E !important;
+            background: #FFFBEB !important;
+            border-color: #FDE68A !important;
+        }
+        html.unit4b-night .lab-pill.green {
+            color: #047857 !important;
+            background: #ECFDF5 !important;
+            border-color: #A7F3D0 !important;
+        }
+        html.unit4b-night .supp-lab-card.red .supp-lab-pill,
+        html.unit4b-night .supp-lab-card.amber .supp-lab-pill,
+        html.unit4b-night .supp-lab-card.green .supp-lab-pill {
+            background: #FFFFFF !important;
+        }
+        html.unit4b-night .supp-lab-card.red .supp-lab-pill { color: #991B1B !important; }
+        html.unit4b-night .supp-lab-card.amber .supp-lab-pill { color: #92400E !important; }
+        html.unit4b-night .supp-lab-card.green .supp-lab-pill { color: #047857 !important; }
+        html.unit4b-night .maya-rx-badge {
+            background: #064E3B !important;
+            border-color: #10B981 !important;
+            color: #A7F3D0 !important;
+        }
+        html.unit4b-night .maya-rx-badge.switched {
+            background: #022C22 !important;
+            border-color: #34D399 !important;
+            color: #D1FAE5 !important;
+        }
+        html.unit4b-night .supp-lab-card.red {
+            background: #2A1215 !important;
+            border-color: #7F1D1D !important;
+        }
+        html.unit4b-night .supp-lab-card.green {
+            background: #064E3B !important;
+            border-color: #10B981 !important;
+        }
+        html.unit4b-night .supp-lab-card.amber {
+            background: #422006 !important;
+            border-color: #F59E0B !important;
+        }
+        html.unit4b-night .supp-lab-card .supp-lab-name,
+        html.unit4b-night .supp-lab-card .supp-lab-cut {
+            color: #E2E8F0 !important;
+        }
+
+        /* 6. Segmented controls / radio groups (Vitals time window + Day/Night) */
+        html.unit4b-night [data-testid="stSegmentedControl"],
+        html.unit4b-night [data-baseweb="button-group"],
         html.unit4b-night div[data-testid="stRadio"] > div[role="radiogroup"],
-        html.unit4b-night .st-key-shift_view div[role="radiogroup"],
+        html.unit4b-night [class*="st-key-vitals_tf_"] [data-testid="stSegmentedControl"],
+        html.unit4b-night [class*="st-key-vitals_tf_"] [data-baseweb="button-group"],
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stSegmentedControl"],
+        html.unit4b-night [data-testid="stPopoverBody"] [data-baseweb="button-group"],
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stSegmentedControl"],
+        html.unit4b-night div[data-baseweb="popover"] [data-baseweb="button-group"] {
+            background-color: #1E293B !important;
+            border: 1px solid #334155 !important;
+            border-color: #334155 !important;
+        }
+        html.unit4b-night [data-testid="stSegmentedControl"] button,
+        html.unit4b-night [data-baseweb="button-group"] > button,
+        html.unit4b-night [data-baseweb="button-group"] > div,
+        html.unit4b-night [data-baseweb="button-group"] > *,
+        html.unit4b-night div[role="radiogroup"] > label,
+        html.unit4b-night [class*="st-key-vitals_tf_"] button,
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stSegmentedControl"] button,
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stSegmentedControl"] button {
+            background-color: #1E293B !important;
+            background: #1E293B !important;
+            color: #CBD5E1 !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+            opacity: 1 !important;
+        }
+        html.unit4b-night [data-testid="stSegmentedControl"] button p,
+        html.unit4b-night [data-testid="stSegmentedControl"] button span,
+        html.unit4b-night [data-testid="stSegmentedControl"] button div,
+        html.unit4b-night [data-baseweb="button-group"] > * p,
+        html.unit4b-night [data-baseweb="button-group"] > * span,
+        html.unit4b-night [data-baseweb="button-group"] > * div,
+        html.unit4b-night div[role="radiogroup"] > label p,
+        html.unit4b-night div[role="radiogroup"] > label span,
+        html.unit4b-night [class*="st-key-vitals_tf_"] button p,
+        html.unit4b-night [class*="st-key-vitals_tf_"] button span,
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stSegmentedControl"] button p,
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stSegmentedControl"] button span,
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stSegmentedControl"] button p,
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stSegmentedControl"] button span {
+            color: #CBD5E1 !important;
+            opacity: 1 !important;
+            font-weight: 500 !important;
+        }
+        /* Active / selected segment — emerald accent (Vitals time window, etc.) */
+        html.unit4b-night [data-testid="stSegmentedControl"] button[aria-checked="true"],
+        html.unit4b-night [data-testid="stSegmentedControl"] button[aria-pressed="true"],
+        html.unit4b-night [data-testid="stSegmentedControl"] button[kind="primary"],
+        html.unit4b-night [data-testid="stBaseButton-segmented_controlActive"],
+        html.unit4b-night [data-testid="stBaseButton-segmentedControlActive"],
+        html.unit4b-night button[data-testid="stBaseButton-segmented_controlActive"],
+        html.unit4b-night button[data-testid="stBaseButton-segmentedControlActive"],
+        html.unit4b-night [data-baseweb="button-group"] > *[aria-checked="true"],
+        html.unit4b-night [data-baseweb="button-group"] > *[aria-selected="true"],
+        html.unit4b-night [data-baseweb="button-group"] > *[aria-pressed="true"],
+        html.unit4b-night div[role="radiogroup"] > label:has(input:checked),
+        html.unit4b-night [class*="st-key-vitals_tf_"] button[aria-checked="true"],
+        html.unit4b-night [class*="st-key-vitals_tf_"] button[kind="primary"],
+        html.unit4b-night [class*="st-key-vitals_tf_"] [data-testid="stBaseButton-segmented_controlActive"],
+        html.unit4b-night [class*="st-key-vitals_tf_"] [data-testid="stBaseButton-segmentedControlActive"],
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stSegmentedControl"] button[aria-checked="true"],
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stSegmentedControl"] button[kind="primary"],
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stBaseButton-segmented_controlActive"],
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stBaseButton-segmentedControlActive"],
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stSegmentedControl"] button[aria-checked="true"],
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stSegmentedControl"] button[kind="primary"],
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stBaseButton-segmented_controlActive"],
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stBaseButton-segmentedControlActive"] {
+            background-color: #065F46 !important;
+            background: #065F46 !important;
+            border: 1.5px solid #10B981 !important;
+            color: #FFFFFF !important;
+            font-weight: 700 !important;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25) !important;
+        }
+        html.unit4b-night [data-testid="stSegmentedControl"] button[aria-checked="true"] p,
+        html.unit4b-night [data-testid="stSegmentedControl"] button[aria-checked="true"] span,
+        html.unit4b-night [data-testid="stSegmentedControl"] button[aria-pressed="true"] p,
+        html.unit4b-night [data-testid="stSegmentedControl"] button[aria-pressed="true"] span,
+        html.unit4b-night [data-testid="stSegmentedControl"] button[kind="primary"] p,
+        html.unit4b-night [data-testid="stSegmentedControl"] button[kind="primary"] span,
+        html.unit4b-night [data-baseweb="button-group"] > *[aria-checked="true"] p,
+        html.unit4b-night [data-baseweb="button-group"] > *[aria-checked="true"] span,
+        html.unit4b-night [data-baseweb="button-group"] > *[aria-selected="true"] p,
+        html.unit4b-night [data-baseweb="button-group"] > *[aria-selected="true"] span,
+        html.unit4b-night [class*="st-key-vitals_tf_"] button[aria-checked="true"] p,
+        html.unit4b-night [class*="st-key-vitals_tf_"] button[aria-checked="true"] span,
+        html.unit4b-night [class*="st-key-vitals_tf_"] button[kind="primary"] p,
+        html.unit4b-night [class*="st-key-vitals_tf_"] button[kind="primary"] span,
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stSegmentedControl"] button[aria-checked="true"] p,
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stSegmentedControl"] button[aria-checked="true"] span,
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stSegmentedControl"] button[kind="primary"] p,
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stSegmentedControl"] button[kind="primary"] span,
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stSegmentedControl"] button[aria-checked="true"] p,
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stSegmentedControl"] button[aria-checked="true"] span,
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stSegmentedControl"] button[kind="primary"] p,
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stSegmentedControl"] button[kind="primary"] span {
+            color: #FFFFFF !important;
+            font-weight: 700 !important;
+        }
+        /* Segmented control label ("Vitals time window") */
+        html.unit4b-night [class*="st-key-vitals_tf_"] label,
+        html.unit4b-night [class*="st-key-vitals_tf_"] [data-testid="stWidgetLabel"] p,
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stWidgetLabel"] p,
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stWidgetLabel"] p {
+            color: #E2E8F0 !important;
+            font-weight: 500 !important;
+        }
+
+        /* Altair / Vega-Lite / chart containers — dark canvas */
+        html.unit4b-night [data-testid="stVegaLiteChart"],
+        html.unit4b-night [data-testid="stArrowVegaLiteChart"],
+        html.unit4b-night [data-testid="stAltairChart"],
+        html.unit4b-night .stVegaLiteChart,
+        html.unit4b-night .stAltairChart,
+        html.unit4b-night .vega-embed,
+        html.unit4b-night .vega-embed > div,
+        html.unit4b-night .marks,
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stVegaLiteChart"],
+        html.unit4b-night [data-testid="stPopoverBody"] .vega-embed,
+        html.unit4b-night div[data-baseweb="popover"] .vega-embed,
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stVegaLiteChart"] {
+            background: #0F172A !important;
+            background-color: #0F172A !important;
+        }
+        html.unit4b-night .vega-embed summary,
+        html.unit4b-night .vega-embed details,
+        html.unit4b-night .vega-actions a {
+            color: #CBD5E1 !important;
+            background: transparent !important;
+        }
+
+        /* Day / Night toggle — keep purple active (overrides emerald selected above) */
         html.unit4b-night .st-key-shift_view [data-testid="stSegmentedControl"],
-        html.unit4b-night .st-key-shift_view [data-baseweb="button-group"] {
+        html.unit4b-night .st-key-shift_view [data-baseweb="button-group"],
+        html.unit4b-night .st-key-shift_view div[role="radiogroup"] {
             background-color: #1E293B !important;
             border-color: #334155 !important;
         }
@@ -9327,12 +9740,26 @@ def inject_night_mode_styles(is_night: bool) -> None:
             box-shadow: none !important;
         }
         html.unit4b-night .st-key-shift_view [data-baseweb="button-group"] > *:nth-child(2),
-        html.unit4b-night .st-key-shift_view [data-testid="stSegmentedControl"] button:nth-of-type(2) {
+        html.unit4b-night .st-key-shift_view [data-testid="stSegmentedControl"] button:nth-of-type(2),
+        html.unit4b-night .st-key-shift_view [data-testid="stSegmentedControl"] button[aria-checked="true"],
+        html.unit4b-night .st-key-shift_view [data-testid="stSegmentedControl"] button[kind="primary"],
+        html.unit4b-night .st-key-shift_view [data-baseweb="button-group"] > *[aria-checked="true"],
+        html.unit4b-night .st-key-shift_view [data-baseweb="button-group"] > *[aria-selected="true"] {
             background-color: #3B0764 !important;
+            background: #3B0764 !important;
             border: 1.5px solid #A855F7 !important;
             color: #F3E8FF !important;
             font-weight: 700 !important;
             box-shadow: 0 2px 8px rgba(168, 85, 247, 0.22) !important;
+        }
+        html.unit4b-night .st-key-shift_view [data-testid="stSegmentedControl"] button[aria-checked="true"] p,
+        html.unit4b-night .st-key-shift_view [data-testid="stSegmentedControl"] button[aria-checked="true"] span,
+        html.unit4b-night .st-key-shift_view [data-testid="stSegmentedControl"] button[kind="primary"] p,
+        html.unit4b-night .st-key-shift_view [data-testid="stSegmentedControl"] button[kind="primary"] span,
+        html.unit4b-night .st-key-shift_view [data-baseweb="button-group"] > *:nth-child(2) p,
+        html.unit4b-night .st-key-shift_view [data-baseweb="button-group"] > *:nth-child(2) span {
+            color: #F3E8FF !important;
+            font-weight: 700 !important;
         }
 
         /* 7. Handoff queue header, task rows, verify pills, custom task */
