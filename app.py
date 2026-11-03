@@ -555,6 +555,30 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.ah-tile-body)
   font-weight: 500;
   color: #0F172A;
 }
+/* Day defensive: light-tinted provenance / intervention surfaces keep dark text */
+.mar-detail-card,
+.mar-detail-card.pending,
+[style*="background:#FEF2F2"],
+[style*="background: #FEF2F2"],
+[style*="background:#FFF1F2"],
+[style*="background: #FFF1F2"],
+[style*="background:#F0FDF4"],
+[style*="background: #F0FDF4"],
+[style*="background:#EFF6FF"],
+[style*="background: #EFF6FF"],
+[style*="background:#FFFBEB"],
+[style*="background: #FFFBEB"],
+[style*="background:#ECFDF5"],
+[style*="background: #ECFDF5"],
+.protocol-scroll-box tbody tr.row-red td,
+.protocol-scroll-box tbody tr.row-amber td {
+  color: #0F172A !important;
+}
+.mar-detail-card .mar-detail-key { color: #334155 !important; }
+.mar-detail-card .mar-detail-val { color: #0F172A !important; }
+.mar-detail-card .mar-detail-title { color: #047857 !important; }
+.mar-detail-card.pending .mar-detail-title { color: #BE123C !important; }
+.mar-detail-card .mar-detail-heading { color: #0F172A !important; }
 .ah-delta-crit {
   font-family: 'JetBrains Mono', monospace !important;
   font-size: 0.70rem !important;
@@ -9118,14 +9142,107 @@ def inject_night_mode_styles(is_night: bool) -> None:
             color: #F8FAFC !important;
         }
         html.unit4b-night .lab-detail-name,
-        html.unit4b-night .lab-detail-cutoff,
-        html.unit4b-night .mar-detail-key,
-        html.unit4b-night .mar-detail-val,
-        html.unit4b-night .mar-detail-heading {
+        html.unit4b-night .lab-detail-cutoff {
             color: #E2E8F0 !important;
         }
         html.unit4b-night .lab-detail-row {
             border-bottom-color: #334155 !important;
+            color: #F8FAFC !important;
+        }
+
+        /* MAR / intervention provenance cards — dark surfaces (never light tint + light text) */
+        html.unit4b-night .mar-detail-card {
+            background: #1E293B !important;
+            border: 1.5px solid #334155 !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .mar-detail-card.pending {
+            background: #2A1215 !important;
+            border-color: #7F1D1D !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .mar-detail-title {
+            color: #FCA5A5 !important;
+        }
+        html.unit4b-night .mar-detail-card:not(.pending) .mar-detail-title {
+            color: #6EE7B7 !important;
+        }
+        html.unit4b-night .mar-detail-heading {
+            color: #FCA5A5 !important;
+        }
+        html.unit4b-night .mar-detail-card:not(.pending) .mar-detail-heading {
+            color: #A7F3D0 !important;
+        }
+        html.unit4b-night .mar-detail-key {
+            color: #94A3B8 !important;
+        }
+        html.unit4b-night .mar-detail-val {
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .mar-detail-section {
+            border-top-color: #334155 !important;
+        }
+        html.unit4b-night .mar-detail-card.pending .mar-detail-section {
+            border-top-color: rgba(127, 29, 29, 0.55) !important;
+        }
+        /* Beat day-defensive !important on light-tint cards while night is active */
+        html.unit4b-night .mar-detail-card .mar-detail-key,
+        html.unit4b-night .mar-detail-card.pending .mar-detail-key {
+            color: #94A3B8 !important;
+        }
+        html.unit4b-night .mar-detail-card .mar-detail-val,
+        html.unit4b-night .mar-detail-card.pending .mar-detail-val {
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .mar-detail-card .mar-detail-title {
+            color: #6EE7B7 !important;
+        }
+        html.unit4b-night .mar-detail-card.pending .mar-detail-title {
+            color: #FCA5A5 !important;
+        }
+        html.unit4b-night .mar-detail-card .mar-detail-heading {
+            color: #A7F3D0 !important;
+        }
+        html.unit4b-night .mar-detail-card.pending .mar-detail-heading {
+            color: #FCA5A5 !important;
+        }
+
+        /* Night defensive: same light-tint containers → dark surface palette */
+        html.unit4b-night [style*="background:#FEF2F2"],
+        html.unit4b-night [style*="background: #FEF2F2"],
+        html.unit4b-night [style*="background:#FFF1F2"],
+        html.unit4b-night [style*="background: #FFF1F2"],
+        html.unit4b-night [style*="background:#FEF3C7"],
+        html.unit4b-night [style*="background: #FEF3C7"] {
+            background: #2A1215 !important;
+            background-color: #2A1215 !important;
+            border-color: #7F1D1D !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night [style*="background:#F0FDF4"],
+        html.unit4b-night [style*="background: #F0FDF4"],
+        html.unit4b-night [style*="background:#ECFDF5"],
+        html.unit4b-night [style*="background: #ECFDF5"] {
+            background: #1E293B !important;
+            background-color: #1E293B !important;
+            border-color: #334155 !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night [style*="background:#EFF6FF"],
+        html.unit4b-night [style*="background: #EFF6FF"],
+        html.unit4b-night [style*="background:#FFFBEB"],
+        html.unit4b-night [style*="background: #FFFBEB"] {
+            background: #1E293B !important;
+            background-color: #1E293B !important;
+            border-color: #334155 !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .protocol-scroll-box tbody tr.row-red td {
+            background: #2A1215 !important;
+            color: #F8FAFC !important;
+        }
+        html.unit4b-night .protocol-scroll-box tbody tr.row-amber td {
+            background: #1E293B !important;
             color: #F8FAFC !important;
         }
 
