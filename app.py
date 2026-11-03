@@ -9141,13 +9141,74 @@ def inject_night_mode_styles(is_night: bool) -> None:
             border: 1px solid #334155 !important;
             color: #F8FAFC !important;
         }
-        html.unit4b-night .lab-detail-name,
-        html.unit4b-night .lab-detail-cutoff {
+        /* Lab / telemetry popover secondary text — bright slate, never muted #475569/#64748B/#94A3B8 */
+        html.unit4b-night .lab-legend,
+        html.unit4b-night [data-testid="stPopoverBody"] .lab-legend,
+        html.unit4b-night div[data-baseweb="popover"] .lab-legend {
             color: #E2E8F0 !important;
+            font-weight: 500 !important;
+        }
+        html.unit4b-night .lab-detail-name,
+        html.unit4b-night .lab-detail-cut,
+        html.unit4b-night .lab-detail-cutoff,
+        html.unit4b-night .supp-lab-cut,
+        html.unit4b-night .supp-lab-name,
+        html.unit4b-night .mic-footnote,
+        html.unit4b-night .mic-table th {
+            color: #E2E8F0 !important;
+            font-weight: 500 !important;
         }
         html.unit4b-night .lab-detail-row {
             border-bottom-color: #334155 !important;
             color: #F8FAFC !important;
+        }
+        /* Source / footer captions inside popovers (e.g. Epic Lab · Hour 48 MTX series) */
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stCaptionContainer"],
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stCaptionContainer"] p,
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stCaptionContainer"] small,
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stCaptionContainer"],
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stCaptionContainer"] p,
+        html.unit4b-night div[data-baseweb="popover"] [data-testid="stCaptionContainer"] small,
+        html.unit4b-night [data-testid="stPopoverBody"] .stCaption,
+        html.unit4b-night [data-testid="stPopoverBody"] .stMarkdown p,
+        html.unit4b-night [data-testid="stPopoverBody"] [data-testid="stMarkdownContainer"] p {
+            color: #E2E8F0 !important;
+            font-weight: 500 !important;
+            opacity: 1 !important;
+        }
+        /* Keep light-tint status pills crisp with dark semantic text */
+        html.unit4b-night .lab-pill.red,
+        html.unit4b-night [data-testid="stPopoverBody"] .lab-pill.red,
+        html.unit4b-night div[data-baseweb="popover"] .lab-pill.red {
+            color: #991B1B !important;
+            background: #FFF1F2 !important;
+            border-color: #FECDD3 !important;
+        }
+        html.unit4b-night .lab-pill.amber,
+        html.unit4b-night [data-testid="stPopoverBody"] .lab-pill.amber,
+        html.unit4b-night div[data-baseweb="popover"] .lab-pill.amber {
+            color: #92400E !important;
+            background: #FFFBEB !important;
+            border-color: #FDE68A !important;
+        }
+        html.unit4b-night .lab-pill.green,
+        html.unit4b-night [data-testid="stPopoverBody"] .lab-pill.green,
+        html.unit4b-night div[data-baseweb="popover"] .lab-pill.green {
+            color: #047857 !important;
+            background: #ECFDF5 !important;
+            border-color: #A7F3D0 !important;
+        }
+        html.unit4b-night .supp-lab-card.red .supp-lab-pill {
+            color: #991B1B !important;
+            background: #FFFFFF !important;
+        }
+        html.unit4b-night .supp-lab-card.amber .supp-lab-pill {
+            color: #92400E !important;
+            background: #FFFFFF !important;
+        }
+        html.unit4b-night .supp-lab-card.green .supp-lab-pill {
+            color: #047857 !important;
+            background: #FFFFFF !important;
         }
 
         /* MAR / intervention provenance cards — dark surfaces (never light tint + light text) */
@@ -9174,10 +9235,12 @@ def inject_night_mode_styles(is_night: bool) -> None:
             color: #A7F3D0 !important;
         }
         html.unit4b-night .mar-detail-key {
-            color: #94A3B8 !important;
+            color: #E2E8F0 !important;
+            font-weight: 500 !important;
         }
         html.unit4b-night .mar-detail-val {
             color: #F8FAFC !important;
+            font-weight: 500 !important;
         }
         html.unit4b-night .mar-detail-section {
             border-top-color: #334155 !important;
@@ -9188,11 +9251,13 @@ def inject_night_mode_styles(is_night: bool) -> None:
         /* Beat day-defensive !important on light-tint cards while night is active */
         html.unit4b-night .mar-detail-card .mar-detail-key,
         html.unit4b-night .mar-detail-card.pending .mar-detail-key {
-            color: #94A3B8 !important;
+            color: #E2E8F0 !important;
+            font-weight: 500 !important;
         }
         html.unit4b-night .mar-detail-card .mar-detail-val,
         html.unit4b-night .mar-detail-card.pending .mar-detail-val {
             color: #F8FAFC !important;
+            font-weight: 500 !important;
         }
         html.unit4b-night .mar-detail-card .mar-detail-title {
             color: #6EE7B7 !important;
@@ -9357,10 +9422,14 @@ def inject_night_mode_styles(is_night: bool) -> None:
         /* Scoped readable body text — NOT a blanket span washout */
         html.unit4b-night [data-testid="stCaptionContainer"],
         html.unit4b-night [data-testid="stCaptionContainer"] p,
+        html.unit4b-night [data-testid="stCaptionContainer"] small,
+        html.unit4b-night .stCaption,
         html.unit4b-night .stMarkdown h3,
         html.unit4b-night div[data-testid="stVerticalBlockBorderWrapper"] > div p,
         html.unit4b-night div[data-testid="stVerticalBlockBorderWrapper"] > div label {
             color: #E2E8F0 !important;
+            font-weight: 500 !important;
+            opacity: 1 !important;
         }
         </style>
         """,
