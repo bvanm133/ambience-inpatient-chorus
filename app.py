@@ -177,6 +177,52 @@ div[role="dialog"] [data-testid="stAlert"] [data-testid="stMarkdownContainer"] s
 div[role="dialog"] [data-testid="stAlert"] [data-testid="stAlertContent"] {
   color: #0F172A !important;
 }
+/* Day — Epic composer / dialog / main secondary buttons: dark ink on light fill */
+div.stButton > button,
+button[kind="secondary"],
+[data-testid="stBaseButton-secondary"],
+div[role="dialog"] div.stButton > button,
+div[role="dialog"] button[kind="secondary"],
+div[role="dialog"] [data-testid="stBaseButton-secondary"],
+[data-testid="stDialog"] div.stButton > button,
+[data-testid="stDialog"] button[kind="secondary"],
+[data-testid="stModal"] div.stButton > button {
+  background-color: #FFFFFF !important;
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid #CBD5E1 !important;
+}
+div.stButton > button p,
+div.stButton > button span,
+div.stButton > button div,
+button[kind="secondary"] p,
+button[kind="secondary"] span,
+button[kind="secondary"] *,
+[data-testid="stBaseButton-secondary"] p,
+[data-testid="stBaseButton-secondary"] span,
+[data-testid="stBaseButton-secondary"] *,
+div[role="dialog"] div.stButton > button *,
+[data-testid="stDialog"] div.stButton > button * {
+  color: #0F172A !important;
+}
+div.stButton > button[kind="primary"],
+button[kind="primary"],
+[data-testid="stBaseButton-primary"],
+div[role="dialog"] button[kind="primary"],
+div[role="dialog"] [data-testid="stBaseButton-primary"],
+[data-testid="stDialog"] button[kind="primary"] {
+  background-color: #059669 !important;
+  background: #059669 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #047857 !important;
+}
+div.stButton > button[kind="primary"] *,
+button[kind="primary"] *,
+[data-testid="stBaseButton-primary"] *,
+div[role="dialog"] button[kind="primary"] *,
+[data-testid="stDialog"] [data-testid="stBaseButton-primary"] * {
+  color: #FFFFFF !important;
+}
 [data-testid="stPopover"] > button,
 [data-testid="stPopoverButton"] {
   display: inline-flex !important;
@@ -2049,6 +2095,26 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(
   color: #BE123C !important;
   background: #FFE4E6 !important;
 }
+.banner-pill.crit-status {
+  color: #BE123C !important;
+  background: #FFE4E6 !important;
+  border: 1px solid #FECDD3 !important;
+  font-weight: 700 !important;
+}
+.banner-pill.addressed-status {
+  color: #047857 !important;
+  background: #D1FAE5 !important;
+  border: 1px solid #A7F3D0 !important;
+  font-weight: 700 !important;
+}
+/* Patient hero left accent follows signed-order acuity */
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.patient-hero-marker.critical) {
+  border-left: 4px solid #E11D48 !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.patient-hero-marker.addressed),
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.patient-hero-marker.ready) {
+  border-left: 4px solid #10B981 !important;
+}
 .patient-banner-meta {
   font-family: 'Inter', sans-serif !important;
   font-size: 0.80rem !important;
@@ -2852,45 +2918,72 @@ def roster_label(p: dict) -> str:
 
 
 def census_rail_pills_html(p: dict) -> str:
-    """Compact monospace alert pills for the Linear census rail."""
+    """Compact monospace alert pills for the Linear census rail.
+
+    Critical archetype pills flip to an emerald addressed state once the
+    patient's Epic composer bundle is fully signed.
+    """
     arch = p.get("archetype")
+    if patient_critical_orders_resolved(p):
+        return (
+            '<div class="linear-nav-pills">'
+            '<span class="pill-ok">🟢 ADDRESSED · ORDERS SIGNED</span>'
+            "</div>"
+        )
     pills: list[str] = []
+    if has_critical_flag(p):
+        pills.append('<span class="pill-crit">🔴 CRITICAL</span>')
     if arch == "mtx":
-        pills = [
-            '<span class="pill-crit">!MTX</span>',
-            '<span class="pill-crit">!Cr</span>',
-            '<span class="pill-muted">HD-MTX Hr 48</span>',
-        ]
+        pills.extend(
+            [
+                '<span class="pill-crit">!MTX</span>',
+                '<span class="pill-crit">!Cr</span>',
+                '<span class="pill-muted">HD-MTX Hr 48</span>',
+            ]
+        )
     elif arch == "pyelo":
-        pills = ['<span class="pill-ok">✓ PO Switch Ready</span>']
+        pills.append('<span class="pill-ok">✓ PO Switch Ready</span>')
     elif arch == "refeeding":
         hr = p.get("hr_nadir", 38)
         phos = p.get("phos", 1.9)
-        pills = [
-            f'<span class="pill-crit">!HR {hr}</span>',
-            f'<span class="pill-crit">!Phos {phos}</span>',
-        ]
+        pills.extend(
+            [
+                f'<span class="pill-crit">!HR {hr}</span>',
+                f'<span class="pill-crit">!Phos {phos}</span>',
+            ]
+        )
     elif arch == "kawasaki":
         day = p.get("fever_day", 6)
-        pills = [
-            f'<span class="pill-crit">!Fever {day}d</span>',
-            '<span class="pill-crit">!CRP</span>',
-            '<span class="pill-muted">Incomplete KD</span>',
-        ]
+        pills.extend(
+            [
+                f'<span class="pill-crit">!Fever {day}d</span>',
+                '<span class="pill-crit">!CRP</span>',
+                '<span class="pill-muted">Incomplete KD</span>',
+            ]
+        )
     else:
-        pills = [
+        pills.extend(
             f'<span class="pill-crit">{html.escape(f)}</span>'
             for f in p.get("flags", [])
-        ]
+        )
     return f'<div class="linear-nav-pills">{"".join(pills)}</div>'
 
 
 def render_census_rail(census: list[dict]) -> None:
     """Linear-style ward census — entire patient card is clickable via JS forwarder."""
     active_id = st.session_state.get("selected_patient", census[0]["id"])
-    n_crit = sum(1 for p in census if p.get("critical"))
+    n_crit = sum(1 for p in census if has_critical_flag(p))
     n_ready = sum(
-        1 for p in census if p.get("archetype") == "pyelo" or "Ready" in str(p.get("badge", ""))
+        1
+        for p in census
+        if patient_critical_orders_resolved(p)
+        or (
+            not p.get("critical")
+            and (
+                p.get("archetype") == "pyelo"
+                or "Ready" in str(p.get("badge", ""))
+            )
+        )
     )
     with st.container(border=True, key="ward_census_rail"):
         st.html(
@@ -3006,8 +3099,48 @@ def render_census_rail(census: list[dict]) -> None:
         )
 
 
+def patient_critical_orders_resolved(p: dict) -> bool:
+    """True when every Epic composer order for this patient is signed to cart."""
+    signed, total = patient_signing_progress(p["id"])
+    return total > 0 and signed >= total
+
+
 def has_critical_flag(p: dict) -> bool:
-    return bool(p.get("critical"))
+    """Red CRITICAL badge — critical archetype with unsigned Epic order bundle."""
+    if not p.get("critical"):
+        return False
+    return not patient_critical_orders_resolved(p)
+
+
+def patient_acuity_marker(p: dict) -> str:
+    """CSS marker class for patient hero / census: critical | addressed | ready | stable."""
+    if patient_critical_orders_resolved(p):
+        return "addressed"
+    if p.get("critical"):
+        return "critical"
+    if p.get("archetype") == "pyelo" or "Ready" in str(p.get("badge", "")):
+        return "ready"
+    return "stable"
+
+
+def patient_status_banner_pill_html(p: dict) -> str:
+    """Header status pill next to patient name (CRITICAL ↔ ORDERS SIGNED)."""
+    if patient_critical_orders_resolved(p):
+        return (
+            '<span class="banner-pill addressed-status">'
+            "✅ ORDERS SIGNED</span>"
+        )
+    if has_critical_flag(p):
+        return (
+            '<span class="banner-pill crit-status">'
+            "🔴 CRITICAL</span>"
+        )
+    if p.get("archetype") == "pyelo" or "Ready" in str(p.get("badge", "")):
+        return (
+            '<span class="banner-pill addressed-status">'
+            "✓ PO Switch Ready</span>"
+        )
+    return ""
 
 
 def day_key(pid: str, tid: str) -> str:
@@ -8845,6 +8978,7 @@ def patient_synthesis_blocks(p: dict) -> dict:
     """Structured synthesis: one-liner, running state, escalation callout."""
     arch = p.get("archetype")
     access = p.get("access", "—")
+    orders_resolved = patient_critical_orders_resolved(p)
     if arch == "mtx":
         return {
             "one_liner": (
@@ -8860,12 +8994,17 @@ def patient_synthesis_blocks(p: dict) -> dict:
                 f"Access: {access}",
             ],
             "escalation": (
-                "Escalate Leucovorin to 100 mg/m² (98 mg) IV q6h · "
-                "Hyperhydrate at 200 mL/m²/hr (196 mL/hr) · "
-                "STAT NaHCO₃ 26 mEq + raise bag to 60 mEq/L · "
-                "Voraxaze standby if Hr-54 MTX remains >2–5 µmol/L"
+                "✅ Hour-48 rescue bundle signed in Epic — nursing to "
+                "execute LV / hyperhydration / NaHCO₃ / Voraxaze watch"
+                if orders_resolved
+                else (
+                    "Escalate Leucovorin to 100 mg/m² (98 mg) IV q6h · "
+                    "Hyperhydrate at 200 mL/m²/hr (196 mL/hr) · "
+                    "STAT NaHCO₃ 26 mEq + raise bag to 60 mEq/L · "
+                    "Voraxaze standby if Hr-54 MTX remains >2–5 µmol/L"
+                )
             ),
-            "tone": "red",
+            "tone": "green" if orders_resolved else "red",
         }
     if arch == "pyelo":
         dose = round(25 * float(p.get("wt", 16)))
@@ -8909,10 +9048,15 @@ def patient_synthesis_blocks(p: dict) -> dict:
                 f"Access: {access}",
             ],
             "escalation": (
-                "Hold caloric advance at 1,600 kcal · IV NaPhos repletion · "
-                "continue telemetry until HR ≥45 and Phos ≥2.5"
+                "✅ Telemetry + IV Phos + bedrest orders signed in Epic — "
+                "execute repletion and hold calorie advance"
+                if orders_resolved
+                else (
+                    "Hold caloric advance at 1,600 kcal · IV NaPhos repletion · "
+                    "continue telemetry until HR ≥45 and Phos ≥2.5"
+                )
             ),
-            "tone": "red",
+            "tone": "green" if orders_resolved else "red",
         }
     # kawasaki / default
     ivig = round(2 * float(p.get("wt", 13)))
@@ -8928,11 +9072,16 @@ def patient_synthesis_blocks(p: dict) -> dict:
             f"Access: {access}",
         ],
         "escalation": (
-            f"Start IVIG 2 g/kg ({ivig} g) IV + High-Dose ASA now · "
-            "monitor infusion reactions · start 36h refractory-fever clock "
-            "after completion"
+            f"✅ IVIG {ivig} g + High-Dose ASA + echo signed in Epic — "
+            "start infusion monitoring and 36h fever clock"
+            if orders_resolved
+            else (
+                f"Start IVIG 2 g/kg ({ivig} g) IV + High-Dose ASA now · "
+                "monitor infusion reactions · start 36h refractory-fever clock "
+                "after completion"
+            )
         ),
-        "tone": "red",
+        "tone": "green" if orders_resolved else "red",
     }
 
 
@@ -8954,21 +9103,33 @@ def render_patient_header(p: dict) -> None:
     code_status = p.get("code_status") or "Full Code"
     allergy_cls = "banner-pill allergy-warn" if allergy != "NKDA" else "banner-pill"
     overlay = st.session_state.get(f"status_overlay_{p['id']}")
-    status_line = (
-        f"✅ [STAGED] {overlay}"
-        if overlay
-        else (p.get("status") or "")
-    )
+    acuity = patient_acuity_marker(p)
+    status_pill = patient_status_banner_pill_html(p)
+    if patient_critical_orders_resolved(p):
+        status_line = (
+            f"✅ [STAGED IN EPIC] {overlay}"
+            if overlay
+            else "✅ All critical orders signed · acute trigger addressed"
+        )
+    else:
+        status_line = (
+            f"✅ [STAGED] {overlay}"
+            if overlay
+            else (p.get("status") or "")
+        )
     with st.container(border=True, key=f"patient_hero_{p['id']}"):
         left, pathway_col = st.columns(
             [0.66, 0.34], vertical_alignment="center"
         )
         with left:
             st.html(
+                f'<div class="patient-hero-marker {acuity}" '
+                'aria-hidden="true"></div>'
                 '<div style="display:flex; align-items:center; gap:10px; '
                 'flex-wrap:wrap; margin-bottom:4px;">'
                 f'<span class="patient-banner-name">'
                 f'{html.escape(p["name"])}</span>'
+                f"{status_pill}"
                 f'<span class="banner-pill">'
                 f'{html.escape(str(p["room"]))}</span>'
                 f'<span class="banner-pill">'
@@ -9230,6 +9391,16 @@ def inject_night_mode_styles(is_night: bool) -> None:
             background: #4C0519 !important;
             color: #FDA4AF !important;
             border: 1px solid #E11D48 !important;
+        }
+        html.unit4b-night .banner-pill.crit-status {
+            background: #4C0519 !important;
+            color: #FDA4AF !important;
+            border: 1px solid #E11D48 !important;
+        }
+        html.unit4b-night .banner-pill.addressed-status {
+            background: #064E3B !important;
+            color: #6EE7B7 !important;
+            border: 1px solid #10B981 !important;
         }
         html.unit4b-night [class*="st-key-open_pathway_"] button,
         html.unit4b-night [class*="st-key-open_pathway_"] [data-testid="stBaseButton-secondary"] {
@@ -10129,6 +10300,90 @@ def inject_night_mode_styles(is_night: bool) -> None:
             opacity: 1 !important;
         }
 
+        /* Night — Epic à la carte Sign Order + main/dialog secondary buttons
+           (fixes white-on-white where only ⚡ was visible) */
+        html.unit4b-night div.stButton > button,
+        html.unit4b-night button[kind="secondary"],
+        html.unit4b-night [data-testid="stBaseButton-secondary"],
+        html.unit4b-night div[role="dialog"] div.stButton > button,
+        html.unit4b-night div[role="dialog"] button[kind="secondary"],
+        html.unit4b-night div[role="dialog"] [data-testid="stBaseButton-secondary"],
+        html.unit4b-night [data-testid="stDialog"] div.stButton > button,
+        html.unit4b-night [data-testid="stDialog"] button[kind="secondary"],
+        html.unit4b-night [data-testid="stDialog"] [data-testid="stBaseButton-secondary"],
+        html.unit4b-night [data-testid="stModal"] div.stButton > button,
+        html.unit4b-night [data-testid="stModal"] button[kind="secondary"],
+        html.unit4b-night [data-baseweb="modal"] div.stButton > button,
+        html.unit4b-night [data-baseweb="modal"] button[kind="secondary"],
+        html.unit4b-night [class*="st-key-btn_"] button,
+        html.unit4b-night [class*="st-key-open_stage_"] button {
+            background-color: #1E293B !important;
+            background: #1E293B !important;
+            border: 1px solid #3B82F6 !important;
+            color: #F8FAFC !important;
+            font-weight: 600 !important;
+            opacity: 1 !important;
+        }
+        html.unit4b-night div.stButton > button:hover,
+        html.unit4b-night button[kind="secondary"]:hover,
+        html.unit4b-night [data-testid="stBaseButton-secondary"]:hover,
+        html.unit4b-night div[role="dialog"] div.stButton > button:hover,
+        html.unit4b-night [data-testid="stDialog"] div.stButton > button:hover,
+        html.unit4b-night [class*="st-key-btn_"] button:hover {
+            background-color: #334155 !important;
+            background: #334155 !important;
+            border-color: #60A5FA !important;
+            color: #FFFFFF !important;
+        }
+        html.unit4b-night div.stButton > button *,
+        html.unit4b-night button[kind="secondary"] *,
+        html.unit4b-night [data-testid="stBaseButton-secondary"] *,
+        html.unit4b-night div[role="dialog"] div.stButton > button *,
+        html.unit4b-night div[role="dialog"] button[kind="secondary"] *,
+        html.unit4b-night div[role="dialog"] [data-testid="stBaseButton-secondary"] *,
+        html.unit4b-night [data-testid="stDialog"] div.stButton > button *,
+        html.unit4b-night [data-testid="stDialog"] button[kind="secondary"] *,
+        html.unit4b-night [data-testid="stModal"] div.stButton > button *,
+        html.unit4b-night [data-baseweb="modal"] div.stButton > button *,
+        html.unit4b-night [class*="st-key-btn_"] button *,
+        html.unit4b-night [class*="st-key-open_stage_"] button * {
+            color: #F8FAFC !important;
+            opacity: 1 !important;
+        }
+        /* Night — primary / Sign All / signed-state accent */
+        html.unit4b-night div.stButton > button[kind="primary"],
+        html.unit4b-night button[kind="primary"],
+        html.unit4b-night [data-testid="stBaseButton-primary"],
+        html.unit4b-night div[role="dialog"] button[kind="primary"],
+        html.unit4b-night div[role="dialog"] [data-testid="stBaseButton-primary"],
+        html.unit4b-night [data-testid="stDialog"] button[kind="primary"],
+        html.unit4b-night [data-testid="stDialog"] [data-testid="stBaseButton-primary"],
+        html.unit4b-night [data-testid="stModal"] button[kind="primary"],
+        html.unit4b-night [class*="st-key-sign_all_"] button,
+        html.unit4b-night [class*="st-key-open_stage_"] button[kind="primary"] {
+            background-color: #059669 !important;
+            background: #059669 !important;
+            border: 1px solid #10B981 !important;
+            color: #FFFFFF !important;
+            font-weight: 700 !important;
+        }
+        html.unit4b-night div.stButton > button[kind="primary"]:hover,
+        html.unit4b-night button[kind="primary"]:hover,
+        html.unit4b-night [data-testid="stBaseButton-primary"]:hover,
+        html.unit4b-night [class*="st-key-sign_all_"] button:hover {
+            background-color: #047857 !important;
+            background: #047857 !important;
+            color: #FFFFFF !important;
+        }
+        html.unit4b-night div.stButton > button[kind="primary"] *,
+        html.unit4b-night button[kind="primary"] *,
+        html.unit4b-night [data-testid="stBaseButton-primary"] *,
+        html.unit4b-night div[role="dialog"] button[kind="primary"] *,
+        html.unit4b-night [data-testid="stDialog"] button[kind="primary"] *,
+        html.unit4b-night [class*="st-key-sign_all_"] button * {
+            color: #FFFFFF !important;
+        }
+
         /* Night — COG / protocol st.info summary card */
         html.unit4b-night div[role="dialog"] [data-testid="stAlert"],
         html.unit4b-night [data-testid="stModal"] [data-testid="stAlert"],
@@ -10585,9 +10840,11 @@ active = patient_by_id(st.session_state.selected_patient, CENSUS)
 with detail_col:
     render_patient_workspace(active, is_night=is_night)
 
-n_crit = sum(1 for p in PATIENTS if p.get("critical"))
+n_crit = sum(1 for p in PATIENTS if has_critical_flag(p))
+n_addressed = sum(1 for p in PATIENTS if patient_critical_orders_resolved(p))
 st.caption(
-    f"{len(PATIENTS)} patients · {n_crit} critical archetypes · "
+    f"{len(PATIENTS)} patients · {n_crit} critical unaddressed · "
+    f"{n_addressed} order bundles signed · "
     f"Active: **{active['room']}** {active['name']} · "
     f"{'Night cross-cover' if is_night else 'Day synthesis'}"
 )
