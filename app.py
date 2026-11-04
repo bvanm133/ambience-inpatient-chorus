@@ -2941,21 +2941,22 @@ def patient_by_id(pid: str, census: list[dict]) -> dict:
 
 def roster_label(p: dict) -> str:
     """Legacy census label helper (Linear rail uses census_rail_pills_html)."""
-    flag_bits = " ".join(f":red[**{f}**]" for f in p.get("flags", []))
-    badge_raw = p.get("badge") or ""
-    if badge_raw and not badge_raw.startswith(":"):
-        badge_raw = f":green[**{badge_raw}**]"
     base = f"**{p['room']}** · {p['name']}"
-    extras = "  ".join(x for x in (flag_bits, badge_raw.strip()) if x)
-    return f"{base}  {extras}".rstrip() if extras else base
+    if patient_orders_signed(p):
+        return f"🟢 {base}"
+    if has_critical_flag(p):
+        return f"{base}  :red[**CRITICAL**]"
+    if has_maya_po_gate(p):
+        return f"{base}  :orange[**PO READY**]"
+    return base
 
 
 def census_rail_pills_html(p: dict) -> str:
-    """Secondary detail pills under the census name row (not the name-status badge).
+    """Alert chips under the census name (!MTX, !Cr, PO SWITCH GATE, etc.).
 
-    Fully resolved patients show no text pills — only the 🟢 next to the name.
+    Hidden entirely once Epic orders are signed — name row shows only 🟢.
     """
-    if patient_fully_resolved(p):
+    if patient_orders_signed(p):
         return '<div class="linear-nav-pills"></div>'
     arch = p.get("archetype")
     pills: list[str] = []
@@ -2966,7 +2967,7 @@ def census_rail_pills_html(p: dict) -> str:
             '<span class="pill-muted">HD-MTX Hr 48</span>',
         ]
     elif arch == "pyelo":
-        # Amber gate — never green while PO switch / checklist remain open
+        # Amber gate — never green while PO switch orders remain unsigned
         pills = ['<span class="pill-amber">🟡 PO SWITCH GATE</span>']
     elif arch == "refeeding":
         hr = p.get("hr_nadir", 38)
@@ -2995,7 +2996,7 @@ def render_census_rail(census: list[dict]) -> None:
     active_id = st.session_state.get("selected_patient", census[0]["id"])
     n_crit = sum(1 for p in census if has_critical_flag(p))
     n_amber = sum(1 for p in census if has_maya_po_gate(p))
-    n_clear = sum(1 for p in census if patient_fully_resolved(p))
+    n_clear = sum(1 for p in census if patient_orders_signed(p))
     with st.container(border=True, key="ward_census_rail"):
         st.html(
             '<div class="linear-rail-header">'
@@ -3117,6 +3118,11 @@ def patient_critical_orders_resolved(p: dict) -> bool:
     return total > 0 and signed >= total
 
 
+def patient_orders_signed(p: dict) -> bool:
+    """Alias — warning chips (!MTX, !Cr, CRITICAL, PO READY) gate on this."""
+    return patient_critical_orders_resolved(p)
+
+
 def patient_checklist_fully_acknowledged(p: dict) -> bool:
     """True when every Day + Night handoff checklist item is checked."""
     pid = p["id"]
@@ -3136,26 +3142,26 @@ def patient_checklist_fully_acknowledged(p: dict) -> bool:
 def patient_fully_resolved(p: dict) -> bool:
     """No unsigned orders and no open checklist decisions remain."""
     return (
-        patient_critical_orders_resolved(p)
+        patient_orders_signed(p)
         and patient_checklist_fully_acknowledged(p)
     )
 
 
 def has_critical_flag(p: dict) -> bool:
-    """Red CRITICAL — critical archetype with any unsigned order or open checklist item."""
+    """Red CRITICAL — critical archetype whose Epic order bundle is still unsigned."""
     if not p.get("critical"):
         return False
-    return not patient_fully_resolved(p)
+    return not patient_orders_signed(p)
 
 
 def has_maya_po_gate(p: dict) -> bool:
-    """Amber PO gate — Maya with pending IV→PO / unsigned orders / open checklist."""
-    return p.get("archetype") == "pyelo" and not patient_fully_resolved(p)
+    """Amber PO gate — Maya with unsigned IV→PO / discharge composer orders."""
+    return p.get("archetype") == "pyelo" and not patient_orders_signed(p)
 
 
 def patient_acuity_marker(p: dict) -> str:
     """CSS marker class: addressed | critical | amber | stable."""
-    if patient_fully_resolved(p):
+    if patient_orders_signed(p):
         return "addressed"
     if p.get("critical"):
         return "critical"
@@ -3167,12 +3173,13 @@ def patient_acuity_marker(p: dict) -> str:
 def patient_name_status_html(p: dict) -> str:
     """Status marker beside the patient name (census cards + header).
 
-    Fully clear → only 🟢. Otherwise 🔴 CRITICAL or 🟡 PO READY (Maya).
+    Orders signed → only 🟢 (no CRITICAL / PO READY / text pills).
+    Unsigned → 🔴 CRITICAL or 🟡 PO READY (Maya).
     """
-    if patient_fully_resolved(p):
+    if patient_orders_signed(p):
         return (
-            '<span class="status-dot-ok" title="All orders signed · '
-            'checklist clear">🟢</span>'
+            '<span class="status-dot-ok" title="All Epic orders signed">'
+            "🟢</span>"
         )
     if has_critical_flag(p):
         return (
@@ -9155,11 +9162,11 @@ def render_patient_header(p: dict) -> None:
     overlay = st.session_state.get(f"status_overlay_{p['id']}")
     acuity = patient_acuity_marker(p)
     status_pill = patient_name_status_html(p)
-    if patient_fully_resolved(p):
+    if patient_orders_signed(p):
         status_line = (
             f"✅ Cleared · {overlay}"
             if overlay
-            else "✅ All orders signed · handoff checklist complete"
+            else "✅ All Epic orders signed"
         )
     elif overlay:
         status_line = f"✅ [STAGED] {overlay}"
@@ -10907,10 +10914,10 @@ with detail_col:
 
 n_crit = sum(1 for p in PATIENTS if has_critical_flag(p))
 n_amber = sum(1 for p in PATIENTS if has_maya_po_gate(p))
-n_clear = sum(1 for p in PATIENTS if patient_fully_resolved(p))
+n_clear = sum(1 for p in PATIENTS if patient_orders_signed(p))
 st.caption(
     f"{len(PATIENTS)} patients · {n_crit} critical · {n_amber} PO gate · "
-    f"{n_clear} cleared 🟢 · "
+    f"{n_clear} orders signed 🟢 · "
     f"Active: **{active['room']}** {active['name']} · "
     f"{'Night cross-cover' if is_night else 'Day synthesis'}"
 )
