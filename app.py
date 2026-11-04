@@ -353,6 +353,26 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.st-key-ward_census_rail):no
   margin-right: 4px !important;
   margin-top: 2px !important;
 }
+.pill-amber {
+  font-family: var(--amb-mono) !important;
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+  color: #92400E !important;
+  background: #FEF3C7 !important;
+  border: 1px solid #FCD34D !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  display: inline-block !important;
+  margin-right: 4px !important;
+  margin-top: 2px !important;
+}
+.status-dot-ok {
+  display: inline-block !important;
+  font-size: 0.92rem !important;
+  line-height: 1 !important;
+  margin-left: 6px !important;
+  vertical-align: middle !important;
+}
 .pill-muted {
   font-family: var(--amb-mono) !important;
   font-size: 0.68rem !important;
@@ -2107,12 +2127,20 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(
   border: 1px solid #A7F3D0 !important;
   font-weight: 700 !important;
 }
+.banner-pill.amber-status {
+  color: #92400E !important;
+  background: #FEF3C7 !important;
+  border: 1px solid #FCD34D !important;
+  font-weight: 700 !important;
+}
 /* Patient hero left accent follows signed-order acuity */
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.patient-hero-marker.critical) {
   border-left: 4px solid #E11D48 !important;
 }
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.patient-hero-marker.addressed),
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.patient-hero-marker.ready) {
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.patient-hero-marker.amber) {
+  border-left: 4px solid #D97706 !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.patient-hero-marker.addressed) {
   border-left: 4px solid #10B981 !important;
 }
 .patient-banner-meta {
@@ -2196,6 +2224,11 @@ div[class*="st-key-patient_hero_"] > div[data-testid="stVerticalBlock"] {
   border-color: #A7F3D0;
   background: #ECFDF5;
   color: #047857;
+}
+.synth-escalate.amber {
+  border-color: #FCD34D;
+  background: #FEF3C7;
+  color: #92400E;
 }
 .census-card-identity {
   padding: 0;
@@ -2420,7 +2453,7 @@ PATIENTS: list[dict] = [
         "wt": 16.0,
         "flags": [],
         "critical": False,
-        "badge": ":green[**Ready for PO Cephalexin**]",
+        "badge": ":orange[**PO READY**]",
         "access": "PIV right hand",
         "status": "30h afebrile; pansensitive E. coli; tolerating PO",
         "afebrile_hours": 30,
@@ -2918,54 +2951,42 @@ def roster_label(p: dict) -> str:
 
 
 def census_rail_pills_html(p: dict) -> str:
-    """Compact monospace alert pills for the Linear census rail.
+    """Secondary detail pills under the census name row (not the name-status badge).
 
-    Critical archetype pills flip to an emerald addressed state once the
-    patient's Epic composer bundle is fully signed.
+    Fully resolved patients show no text pills — only the 🟢 next to the name.
     """
+    if patient_fully_resolved(p):
+        return '<div class="linear-nav-pills"></div>'
     arch = p.get("archetype")
-    if patient_critical_orders_resolved(p):
-        return (
-            '<div class="linear-nav-pills">'
-            '<span class="pill-ok">🟢 ADDRESSED · ORDERS SIGNED</span>'
-            "</div>"
-        )
     pills: list[str] = []
-    if has_critical_flag(p):
-        pills.append('<span class="pill-crit">🔴 CRITICAL</span>')
     if arch == "mtx":
-        pills.extend(
-            [
-                '<span class="pill-crit">!MTX</span>',
-                '<span class="pill-crit">!Cr</span>',
-                '<span class="pill-muted">HD-MTX Hr 48</span>',
-            ]
-        )
+        pills = [
+            '<span class="pill-crit">!MTX</span>',
+            '<span class="pill-crit">!Cr</span>',
+            '<span class="pill-muted">HD-MTX Hr 48</span>',
+        ]
     elif arch == "pyelo":
-        pills.append('<span class="pill-ok">✓ PO Switch Ready</span>')
+        # Amber gate — never green while PO switch / checklist remain open
+        pills = ['<span class="pill-amber">🟡 PO SWITCH GATE</span>']
     elif arch == "refeeding":
         hr = p.get("hr_nadir", 38)
         phos = p.get("phos", 1.9)
-        pills.extend(
-            [
-                f'<span class="pill-crit">!HR {hr}</span>',
-                f'<span class="pill-crit">!Phos {phos}</span>',
-            ]
-        )
+        pills = [
+            f'<span class="pill-crit">!HR {hr}</span>',
+            f'<span class="pill-crit">!Phos {phos}</span>',
+        ]
     elif arch == "kawasaki":
         day = p.get("fever_day", 6)
-        pills.extend(
-            [
-                f'<span class="pill-crit">!Fever {day}d</span>',
-                '<span class="pill-crit">!CRP</span>',
-                '<span class="pill-muted">Incomplete KD</span>',
-            ]
-        )
+        pills = [
+            f'<span class="pill-crit">!Fever {day}d</span>',
+            '<span class="pill-crit">!CRP</span>',
+            '<span class="pill-muted">Incomplete KD</span>',
+        ]
     else:
-        pills.extend(
+        pills = [
             f'<span class="pill-crit">{html.escape(f)}</span>'
             for f in p.get("flags", [])
-        )
+        ]
     return f'<div class="linear-nav-pills">{"".join(pills)}</div>'
 
 
@@ -2973,18 +2994,8 @@ def render_census_rail(census: list[dict]) -> None:
     """Linear-style ward census — entire patient card is clickable via JS forwarder."""
     active_id = st.session_state.get("selected_patient", census[0]["id"])
     n_crit = sum(1 for p in census if has_critical_flag(p))
-    n_ready = sum(
-        1
-        for p in census
-        if patient_critical_orders_resolved(p)
-        or (
-            not p.get("critical")
-            and (
-                p.get("archetype") == "pyelo"
-                or "Ready" in str(p.get("badge", ""))
-            )
-        )
-    )
+    n_amber = sum(1 for p in census if has_maya_po_gate(p))
+    n_clear = sum(1 for p in census if patient_fully_resolved(p))
     with st.container(border=True, key="ward_census_rail"):
         st.html(
             '<div class="linear-rail-header">'
@@ -3010,6 +3021,7 @@ def render_census_rail(census: list[dict]) -> None:
                     '<div class="census-card-top-left">'
                     f'<span class="pill-room">{html.escape(str(p["room"]))}</span>'
                     f"{html.escape(p['name'])}"
+                    f"{patient_name_status_html(p)}"
                     "</div>"
                     "</div>"
                     f"{census_rail_pills_html(p)}"
@@ -3026,8 +3038,8 @@ def render_census_rail(census: list[dict]) -> None:
                     st.rerun()
         st.html(
             '<div class="linear-rail-footer">'
-            f"{len(census)} Beds Active · {n_crit} Critical Gates · "
-            f"{n_ready} Discharge Ready</div>"
+            f"{len(census)} Beds Active · {n_crit} Critical · "
+            f"{n_amber} PO Gate · {n_clear} Cleared 🟢</div>"
         )
         # Click forwarder in the main document (st.html + JS). Prefer this over
         # deprecated components.v1.html / height-0 iframes for the same pattern.
@@ -3105,42 +3117,79 @@ def patient_critical_orders_resolved(p: dict) -> bool:
     return total > 0 and signed >= total
 
 
+def patient_checklist_fully_acknowledged(p: dict) -> bool:
+    """True when every Day + Night handoff checklist item is checked."""
+    pid = p["id"]
+    day_tasks = p.get("day_tasks") or []
+    night_tasks = p.get("night_tasks") or []
+    if not day_tasks and not night_tasks:
+        return True
+    for tid, *_rest in day_tasks:
+        if not st.session_state.get(day_key(pid, tid)):
+            return False
+    for tid, *_rest in night_tasks:
+        if not st.session_state.get(night_key(pid, tid)):
+            return False
+    return True
+
+
+def patient_fully_resolved(p: dict) -> bool:
+    """No unsigned orders and no open checklist decisions remain."""
+    return (
+        patient_critical_orders_resolved(p)
+        and patient_checklist_fully_acknowledged(p)
+    )
+
+
 def has_critical_flag(p: dict) -> bool:
-    """Red CRITICAL badge — critical archetype with unsigned Epic order bundle."""
+    """Red CRITICAL — critical archetype with any unsigned order or open checklist item."""
     if not p.get("critical"):
         return False
-    return not patient_critical_orders_resolved(p)
+    return not patient_fully_resolved(p)
+
+
+def has_maya_po_gate(p: dict) -> bool:
+    """Amber PO gate — Maya with pending IV→PO / unsigned orders / open checklist."""
+    return p.get("archetype") == "pyelo" and not patient_fully_resolved(p)
 
 
 def patient_acuity_marker(p: dict) -> str:
-    """CSS marker class for patient hero / census: critical | addressed | ready | stable."""
-    if patient_critical_orders_resolved(p):
+    """CSS marker class: addressed | critical | amber | stable."""
+    if patient_fully_resolved(p):
         return "addressed"
     if p.get("critical"):
         return "critical"
-    if p.get("archetype") == "pyelo" or "Ready" in str(p.get("badge", "")):
-        return "ready"
+    if p.get("archetype") == "pyelo":
+        return "amber"
     return "stable"
 
 
-def patient_status_banner_pill_html(p: dict) -> str:
-    """Header status pill next to patient name (CRITICAL ↔ ORDERS SIGNED)."""
-    if patient_critical_orders_resolved(p):
+def patient_name_status_html(p: dict) -> str:
+    """Status marker beside the patient name (census cards + header).
+
+    Fully clear → only 🟢. Otherwise 🔴 CRITICAL or 🟡 PO READY (Maya).
+    """
+    if patient_fully_resolved(p):
         return (
-            '<span class="banner-pill addressed-status">'
-            "✅ ORDERS SIGNED</span>"
+            '<span class="status-dot-ok" title="All orders signed · '
+            'checklist clear">🟢</span>'
         )
     if has_critical_flag(p):
         return (
             '<span class="banner-pill crit-status">'
             "🔴 CRITICAL</span>"
         )
-    if p.get("archetype") == "pyelo" or "Ready" in str(p.get("badge", "")):
+    if has_maya_po_gate(p):
         return (
-            '<span class="banner-pill addressed-status">'
-            "✓ PO Switch Ready</span>"
+            '<span class="banner-pill amber-status">'
+            "🟡 PO READY</span>"
         )
     return ""
+
+
+def patient_status_banner_pill_html(p: dict) -> str:
+    """Header status next to patient name (alias of name-status marker)."""
+    return patient_name_status_html(p)
 
 
 def day_key(pid: str, tid: str) -> str:
@@ -8978,6 +9027,7 @@ def patient_synthesis_blocks(p: dict) -> dict:
     """Structured synthesis: one-liner, running state, escalation callout."""
     arch = p.get("archetype")
     access = p.get("access", "—")
+    cleared = patient_fully_resolved(p)
     orders_resolved = patient_critical_orders_resolved(p)
     if arch == "mtx":
         return {
@@ -9004,7 +9054,7 @@ def patient_synthesis_blocks(p: dict) -> dict:
                     "Voraxaze standby if Hr-54 MTX remains >2–5 µmol/L"
                 )
             ),
-            "tone": "green" if orders_resolved else "red",
+            "tone": "green" if cleared else "red",
         }
     if arch == "pyelo":
         dose = round(25 * float(p.get("wt", 16)))
@@ -9033,7 +9083,7 @@ def patient_synthesis_blocks(p: dict) -> dict:
                     f"{dose} mg PO TID × remaining course"
                 )
             ),
-            "tone": "green",
+            "tone": "green" if cleared else "amber",
         }
     if arch == "refeeding":
         return {
@@ -9056,7 +9106,7 @@ def patient_synthesis_blocks(p: dict) -> dict:
                     "continue telemetry until HR ≥45 and Phos ≥2.5"
                 )
             ),
-            "tone": "green" if orders_resolved else "red",
+            "tone": "green" if cleared else "red",
         }
     # kawasaki / default
     ivig = round(2 * float(p.get("wt", 13)))
@@ -9081,7 +9131,7 @@ def patient_synthesis_blocks(p: dict) -> dict:
                 "after completion"
             )
         ),
-        "tone": "green" if orders_resolved else "red",
+        "tone": "green" if cleared else "red",
     }
 
 
@@ -9104,19 +9154,17 @@ def render_patient_header(p: dict) -> None:
     allergy_cls = "banner-pill allergy-warn" if allergy != "NKDA" else "banner-pill"
     overlay = st.session_state.get(f"status_overlay_{p['id']}")
     acuity = patient_acuity_marker(p)
-    status_pill = patient_status_banner_pill_html(p)
-    if patient_critical_orders_resolved(p):
+    status_pill = patient_name_status_html(p)
+    if patient_fully_resolved(p):
         status_line = (
-            f"✅ [STAGED IN EPIC] {overlay}"
+            f"✅ Cleared · {overlay}"
             if overlay
-            else "✅ All critical orders signed · acute trigger addressed"
+            else "✅ All orders signed · handoff checklist complete"
         )
+    elif overlay:
+        status_line = f"✅ [STAGED] {overlay}"
     else:
-        status_line = (
-            f"✅ [STAGED] {overlay}"
-            if overlay
-            else (p.get("status") or "")
-        )
+        status_line = p.get("status") or ""
     with st.container(border=True, key=f"patient_hero_{p['id']}"):
         left, pathway_col = st.columns(
             [0.66, 0.34], vertical_alignment="center"
@@ -9163,7 +9211,12 @@ def render_narrative(p: dict, *, is_night: bool) -> None:
     zone_key = "night_banner" if is_night else f"synth_bento_{p['id']}"
     blocks = patient_synthesis_blocks(p)
     tone = blocks.get("tone", "red")
-    esc_cls = "synth-escalate green" if tone == "green" else "synth-escalate"
+    if tone == "green":
+        esc_cls = "synth-escalate green"
+    elif tone == "amber":
+        esc_cls = "synth-escalate amber"
+    else:
+        esc_cls = "synth-escalate"
     esc_label = "⚡ Clinical action triggers &amp; recommended orders"
     running_lis = "".join(
         f"<li>{html.escape(item)}</li>" for item in blocks.get("running", [])
@@ -9224,6 +9277,7 @@ def render_checklist(p: dict, *, is_night: bool) -> None:
             shown = checklist_label_with_stage(p["id"], tid, label)
             cols = st.columns([0.72, 0.28], gap="small", vertical_alignment="top")
             with cols[0]:
+                # Default checkbox change already reruns — refreshes 🟢 name badge live
                 st.checkbox(shown, key=key)
             with cols[1]:
                 checklist_source_popover(
@@ -9401,6 +9455,12 @@ def inject_night_mode_styles(is_night: bool) -> None:
             background: #064E3B !important;
             color: #6EE7B7 !important;
             border: 1px solid #10B981 !important;
+        }
+        html.unit4b-night .banner-pill.amber-status,
+        html.unit4b-night .pill-amber {
+            background: #78350F !important;
+            color: #FDE68A !important;
+            border: 1px solid #F59E0B !important;
         }
         html.unit4b-night [class*="st-key-open_pathway_"] button,
         html.unit4b-night [class*="st-key-open_pathway_"] [data-testid="stBaseButton-secondary"] {
@@ -9831,6 +9891,11 @@ def inject_night_mode_styles(is_night: bool) -> None:
             background: #064E3B !important;
             border-color: #10B981 !important;
             color: #A7F3D0 !important;
+        }
+        html.unit4b-night .synth-escalate.amber {
+            background: #78350F !important;
+            border-color: #F59E0B !important;
+            color: #FDE68A !important;
         }
 
         /* Catch remaining hardcoded light surfaces + dark ink in custom HTML
@@ -10841,10 +10906,11 @@ with detail_col:
     render_patient_workspace(active, is_night=is_night)
 
 n_crit = sum(1 for p in PATIENTS if has_critical_flag(p))
-n_addressed = sum(1 for p in PATIENTS if patient_critical_orders_resolved(p))
+n_amber = sum(1 for p in PATIENTS if has_maya_po_gate(p))
+n_clear = sum(1 for p in PATIENTS if patient_fully_resolved(p))
 st.caption(
-    f"{len(PATIENTS)} patients · {n_crit} critical unaddressed · "
-    f"{n_addressed} order bundles signed · "
+    f"{len(PATIENTS)} patients · {n_crit} critical · {n_amber} PO gate · "
+    f"{n_clear} cleared 🟢 · "
     f"Active: **{active['room']}** {active['name']} · "
     f"{'Night cross-cover' if is_night else 'Day synthesis'}"
 )
