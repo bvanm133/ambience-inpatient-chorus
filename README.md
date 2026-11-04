@@ -1,5 +1,5 @@
 
-https://www.loom.com/v1/videos/b7efd1da5639418193390c7b5506976c/thumbnail.gif(https://www.loom.com/share/b7efd1da5639418193390c7b5506976c)
+https://www.loom.com/v1/videos/b7efd1da5639418193390c7b5506976c/thumbnail.gif (https://www.loom.com/share/b7efd1da5639418193390c7b5506976c)
 
 # Pediatric Ward Multi-Archetype Action Engine
 
