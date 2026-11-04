@@ -1,6 +1,4 @@
-Stateful Clinical AI for Safe Execution - Watch Video
-
-# Ambience Inpatient Chorus — Pediatric Ward Multi-Archetype Action Engine
+# Pediatric Ward Multi-Archetype Action Engine
 
 Prototype Streamlit app for **Unit 4B attending handoff**: protocol-gated clinical decision support, zero-click EHR verification, point-of-care AutoCDI capture, and Human-in-the-Loop Epic order staging across four pediatric archetypes.
 
