@@ -1,3 +1,5 @@
+[![Watch the video](https://www.loom.com/share/b7efd1da5639418193390c7b5506976c)
+
 # Pediatric Ward Multi-Archetype Action Engine
 
 Prototype Streamlit app for **Unit 4B attending handoff**: protocol-gated clinical decision support, zero-click EHR verification, point-of-care AutoCDI capture, and Human-in-the-Loop Epic order staging across four pediatric archetypes.
